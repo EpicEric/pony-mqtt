@@ -4,7 +4,7 @@ A notify-based Pony implementation of a MQTT client.
 
 ## Status
 
-[![Build Status](https://travis-ci.org/epiceric/pony-mqtt.svg?branch=master)](https://travis-ci.org/epiceric/pony-mqtt)
+[![Build Status](https://travis-ci.org/EpicEric/pony-mqtt.svg?branch=master)](https://travis-ci.org/EpicEric/pony-mqtt)
 
 Pony MQTT is currently under pre-alpha development. Revisions are greatly appreciated, since this library likely contains major programming errors and bugs.
 
