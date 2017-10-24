@@ -10,7 +10,6 @@ Pony MQTT is currently under pre-alpha development. Revisions are greatly apprec
 
 ### Pending features
 
-* Documentation.
 * MQTTv31 support.
 * Topic validator unit tests.
 * Identify potential bugs.
@@ -20,6 +19,7 @@ Pony MQTT is currently under pre-alpha development. Revisions are greatly apprec
 
 * Auto-retry connection on socket errors if `retry_connection` is set.
 * Auto-retry connection with older protocol version upon receiving "invalid version" CONNACK error code.
+* Improve documentation.
 * Notify tests.
 * MQTTv5 support.
 

@@ -1,6 +1,9 @@
 use "net"
 
 class MQTTConnectionNotify is TCPConnectionNotify
+  """
+  A TCPConnectionNotify class that redirects all messages to an MQTTConnection actor.
+  """
   let host: String
   let port: String
   let _connection: MQTTConnection

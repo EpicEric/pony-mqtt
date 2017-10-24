@@ -9,6 +9,12 @@ primitive MQTTv31
 type MQTTVersion is (MQTTv311 | MQTTv31)
 
 actor MQTTConnection
+  """
+  An actor that handles the entire MQTT connection.
+
+  It can receive data through a TCPConnectionNotify, or commands from an MQTTClient.
+  This allows for all expected abilities from a regular MQTT client.
+  """
   let host: String
   let port: String
   let _client: MQTTClient
@@ -117,6 +123,10 @@ actor MQTTConnection
   be received(conn: TCPConnection, data: Array[U8] iso,
     times: USize)
   =>
+    """
+    Combines and breaks received data into control packets, based on the
+    remaining length value.
+    """
     let full_data: Array[U8] val = consume data
     _data_buffer.append(full_data)
     let buffer = Writer
@@ -150,6 +160,9 @@ actor MQTTConnection
     end
 
   be _parse_packet(data: Array[U8] val) =>
+    """
+    Parses and acts according a single control packet.
+    """
     let buffer = Reader
     buffer.append(data)
     try
@@ -274,6 +287,9 @@ actor MQTTConnection
     end
 
   fun ref _end_connection(clear_conn: Bool = true) =>
+    """
+    Clears data when the connection is ended.
+    """
     _connected = false
     if clear_conn then _conn = None end
     _packet_id = 0
@@ -286,6 +302,10 @@ actor MQTTConnection
     _unsub_topics.clear()
 
   fun ref _connect() =>
+    """
+    Sends a CONNECTION control packet to the server after establishing
+    a TCP connection.
+    """
     if _connected then
       _client.on_error(this, "Cannot connect: Already connected")
       return
@@ -350,6 +370,9 @@ actor MQTTConnection
     _timers.dispose()
 
   fun ref disconnect() =>
+    """
+    Ends the MQTT and TCP connections.
+    """
     if not(_connected) then
       _client.on_error(this, "Cannot disconnect: Already disconnected")
       return
@@ -364,6 +387,9 @@ actor MQTTConnection
     end
 
   fun ref subscribe(topic: String, qos: U8 = 0) =>
+    """
+    Subscribes to a topic.
+    """
     if not(MQTTTopic.validate_subscribe(topic)) then
       _client.on_error(this, "Cannot subscribe: Invalid topic")
       return
@@ -395,6 +421,9 @@ actor MQTTConnection
     end
 
   fun ref unsubscribe(topic: String) =>
+    """
+    Unsubscribes from a topic.
+    """
     if not(MQTTTopic.validate_subscribe(topic)) then
       _client.on_error(this, "Cannot unsubscribe: Invalid topic")
       return
@@ -421,12 +450,20 @@ actor MQTTConnection
     end
 
   fun ref publish(packet: MQTTPacket, retain: Bool = false) =>
+    """
+    Publishes a packet to a specified topic.
+
+    Strips the connection-specific control ID when requested by the user.
+    """
     _publish(MQTTPacket(
       packet.topic, packet.message, packet.qos,
       if _sent_packets.contains(packet.id) then 0 else packet.id end
     ), retain)
 
   fun ref _publish(packet: MQTTPacket, retain: Bool = false) =>
+    """
+    Sends the packet to the topic.
+    """
     if not(MQTTTopic.validate_publish(packet.topic)) then
       _client.on_error(this, "Cannot publish: Invalid topic")
       return
@@ -465,6 +502,9 @@ actor MQTTConnection
     if (packet.qos == 0) then _client.on_publish(this, packet) end
 
   fun ref _puback(packet: MQTTPacket) =>
+    """
+    Acknowledges a QoS 1 publish from the server.
+    """
     let buffer = Writer
     buffer.u16_be(0x4002)
     buffer.u16_be(packet.id)
@@ -473,6 +513,9 @@ actor MQTTConnection
     end
 
   fun ref _pubrec(packet: MQTTPacket) =>
+    """
+    Acknowledges a QoS 2 publish from the server.
+    """
     let buffer = Writer
     buffer.u16_be(0x5002)
     buffer.u16_be(packet.id)
@@ -482,6 +525,9 @@ actor MQTTConnection
     end
 
   fun ref _pubrel(packet: MQTTPacket) =>
+    """
+    Finalizes a QoS 2 publish from the client.
+    """
     let buffer = Writer
     buffer.u16_be(0x6202)
     buffer.u16_be(packet.id)
@@ -491,6 +537,9 @@ actor MQTTConnection
     end
 
   fun ref _pubcomp(packet: MQTTPacket) =>
+    """
+    Finalizes a QoS 2 publish from the server.
+    """
     let buffer = Writer
     buffer.u16_be(0x7002)
     buffer.u16_be(packet.id)
@@ -499,6 +548,9 @@ actor MQTTConnection
     end
 
   fun ref _ping() =>
+    """
+    Pings the server in order to keep the connection alive.
+    """
     if not(_connected) then
       _client.on_error(this, "Cannot ping: Not connected")
       return
@@ -510,9 +562,16 @@ actor MQTTConnection
     end
 
   be ping() =>
+    """
+    User-callable ping.
+    """
     _ping()
 
   be resend_packets() =>
+    """
+    Handles any unconfirmed QoS 1 or 2 publish packets by
+    redoing its action.
+    """
     if _connected then
       for packet in _sent_packets.values() do
         _publish(packet)

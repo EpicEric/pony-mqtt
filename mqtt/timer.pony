@@ -1,6 +1,9 @@
 use "time"
 
 class _MQTTPingTimer is TimerNotify
+  """
+  A timer for ping requests.
+  """
   let _conn: MQTTConnection
 
   new iso create(conn: MQTTConnection) =>
@@ -11,6 +14,9 @@ class _MQTTPingTimer is TimerNotify
     true
 
 class _MQTTResendTimer is TimerNotify
+  """
+  A timer for lost packet resends.
+  """
   let _conn: MQTTConnection
 
   new iso create(conn: MQTTConnection) =>
