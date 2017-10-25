@@ -198,7 +198,7 @@ actor _MQTTConnection is MQTTConnection
       match buffer.peek_u8(0)? >> 4
       | 0x2 => // CONNACK
         if buffer.peek_u8(0)? != 0x20 then error end
-        if buffer.size() < 4 then return end
+        if buffer.size() != 4 then error end
         match buffer.peek_u8(3)? // Return code
         | 0 =>
           _connected = true
@@ -246,45 +246,46 @@ actor _MQTTConnection is MQTTConnection
         _client.on_message(this, packet)
       | 0x4 => // PUBACK
         if buffer.peek_u8(0)? != 0x40 then error end
-        if buffer.size() < 4 then return end
+        if buffer.size() != 4 then error end
         buffer.skip(2)?
         _client.on_publish(this, _sent_packets.remove(buffer.u16_be()?)?._2)
       | 0x5 => // PUBREC
         if buffer.peek_u8(0)? != 0x50 then error end
-        if buffer.size() < 4 then return end
+        if buffer.size() != 4 then error end
         buffer.skip(2)?
         _pubrel(_sent_packets.remove(buffer.u16_be()?)?._2)
       | 0x6 => // PUBREL
         if buffer.peek_u8(0)? != 0x62 then error end
-        if buffer.size() < 4 then return end
+        if buffer.size() != 4 then error end
         buffer.skip(2)?
         _pubcomp(_received_packets.remove(buffer.u16_be()?)?._2)
       | 0x7 => // PUBCOMP
         if buffer.peek_u8(0)? != 0x70 then error end
-        if buffer.size() < 4 then return end
+        if buffer.size() != 4 then error end
         buffer.skip(2)?
         _client.on_publish(this, _confirmed_packets.remove(buffer.u16_be()?)?._2)
       | 0x9 => // SUBACK
         if buffer.peek_u8(0)? != 0x90 then error end
-        if buffer.size() < 5 then return end
+        if buffer.size() != 5 then error end
         buffer.skip(2)?
         let topic = _sub_topics.remove(buffer.u16_be()?)?._2
         if (buffer.peek_u8(0)? and 0x80) == 0x00 then
-          _client.on_subscribe(this, topic)
+          _client.on_subscribe(this, topic, buffer.u8()? and 0x03)
         else
-          let output_err = recover String(topic.size() + 38) end
-          output_err.>append("[SUBACK] Could not subscribe to topic ")
+          let output_err = recover String(topic.size() + 40) end
+          output_err.>append("[SUBACK] Could not subscribe to topic '")
             .>append(topic)
+            .>append("'")
           _client.on_error(this, consume output_err)
         end
       | 0xB => // UNSUBACK
         if buffer.peek_u8(0)? != 0xB0 then error end
-        if buffer.size() < 4 then return end
+        if buffer.size() != 4 then error end
         buffer.skip(2)?
         _client.on_unsubscribe(this, _unsub_topics.remove(buffer.u16_be()?)?._2)
       | 0xD => // PINGRESP
         if buffer.peek_u8(0)? != 0xD0 then error end
-        if buffer.size() < 2 then return end
+        if buffer.size() != 2 then error end
         _client.on_ping(this)
       else
         try
@@ -293,7 +294,7 @@ actor _MQTTConnection is MQTTConnection
           let output_err = recover String(control_code_string.size() + 48) end
           output_err.>append("[")
             .>append(control_code_string)
-            .>append("] Unexpected server control code; disconnecting")
+            .>append("] Unexpected control code; disconnecting")
           _client.on_error(this, consume output_err)
           disconnect()
         else
@@ -354,6 +355,7 @@ actor _MQTTConnection is MQTTConnection
       end
     )
     // Flags
+    // TODO: Add will
     buffer.u8(
       0x02 or
       if _user is String then
@@ -408,7 +410,6 @@ actor _MQTTConnection is MQTTConnection
     let buffer = Writer
     buffer.u16_le(0xE0)
     try
-      _connected = false
       (_conn as TCPConnection).writev(buffer.done())
       (_conn as TCPConnection).dispose()
        _end_connection()
@@ -469,7 +470,7 @@ actor _MQTTConnection is MQTTConnection
     buffer.write(topic)
     // -- Fixed header --
     let msg_buffer = Writer
-    msg_buffer.u8(0x82)
+    msg_buffer.u8(0xA2)
     msg_buffer.write(_remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     _unsub_topics.update(_packet_id, topic)
@@ -518,9 +519,9 @@ actor _MQTTConnection is MQTTConnection
     let msg_buffer = Writer
     msg_buffer.u8(
       0x30 or
-      (if (_sent_packets.contains(packet.id)) then 0x8 else 0x0 end) or
+      (if (_sent_packets.contains(packet.id)) then 0x08 else 0x00 end) or
       (packet.qos << 1) or
-      (if retain then 0x1 else 0x0 end)
+      (if retain then 0x01 else 0x00 end)
     )
     msg_buffer.write(_remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())

@@ -18,7 +18,7 @@ class MyClient is MQTTClient
   fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket val) =>
     _env.out.print("[PUBLISH] Sent packet to topic '" + packet.topic + "'.")
 
-  fun ref on_subscribe(conn: MQTTConnection ref, topic: String) =>
+  fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
     _env.out.print("[SUBACK] Subscribed to topic '" + topic + "'.")
     conn.publish(MQTTPacket("pony/hello", ['w'; 'o'; 'r'; 'l'; 'd'], 0))
 
@@ -40,6 +40,6 @@ actor Main
     try
       MQTTConnectionFactory(
         env.root as AmbientAuth,
-        MQTTConnectionNotify(recover MyClient(env) end, "localhost", "1883", 15)
+        MQTTConnectionNotify(recover MyClient(env) end, "localhost", "1883", 15, MQTTv31)
       )
     end

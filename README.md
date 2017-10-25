@@ -8,15 +8,21 @@ A notify-based Pony implementation of a MQTT client.
 
 Pony MQTT is currently under pre-alpha development. Revisions are greatly appreciated, since this library likely contains major programming errors and bugs.
 
+### Available features
+
+* Support for MQTT versions 3.1 and 3.1.1 through TCP.
+* Authentication.
+* QoS for publish, subscribe, unsubscribe.
+
 ### Pending features
 
-* MQTTv31 support.
-* Identify potential bugs.
+* Will support.
+* Retain support.
 * Evaluate if any refactoring is necessary.
 
 ### Planned features
 
-* Auto-retry connection on socket errors if `retry_connection` is set.
+* Auto-retry connection on socket or protocol errors if `retry_connection` is set.
 * Auto-retry connection with older protocol version upon receiving "invalid version" CONNACK error code.
 * Improve documentation.
 * Notify tests.

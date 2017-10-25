@@ -16,13 +16,13 @@ interface MQTTClient
 
   fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket val) =>
     """
-    Called after publishing a message to the broker. Receives said message.
+    Called after succesfully publishing a message to the broker. Receives said message.
     """
     None
 
-  fun ref on_subscribe(conn: MQTTConnection ref, topic: String) =>
+  fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
     """
-    Called after successfully subscribing to a topic. Receives said topic.
+    Called after successfully subscribing to a topic. Receives said topic and the granted QoS.
     """
     None
 
