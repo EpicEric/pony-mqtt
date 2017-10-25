@@ -16,7 +16,6 @@ Pony MQTT is currently under pre-alpha development. Revisions are greatly apprec
 
 ### Pending features
 
-* DUP flag on publish.
 * Auto-retry connection on socket or protocol errors if `retry_connection` is set.
 * Evaluate if any refactoring is necessary.
 

@@ -224,8 +224,8 @@ actor _MQTTConnection is MQTTConnection
         let byte: U8 = buffer.peek_u8(0)?
         let qos: U8 = (byte and 0x06) >> 1
         if qos == 0x03 then error end
-        let retain: Bool = (byte and 0x01) == 0x01
-        //TODO: DUP (0x08) flag
+        let retain: Bool = (byte and 0x01) != 0x00
+        let dup: Bool = (byte and 0x08) != 0x00
         buffer.skip(1)?
         // Skip remaining length field
         var temp: U8 = 0x80
