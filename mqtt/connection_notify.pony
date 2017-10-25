@@ -14,7 +14,8 @@ class MQTTConnectionNotify is TCPConnectionNotify
     port': String = "1883",
     keepalive': U16 = 15,
     version': MQTTVersion = MQTTv311,
-    retry_connection': Bool = false, //TODO
+    retry_connection': Bool = false,
+    will_packet': (MQTTPacket | None) = None,
     client_id': String = "",
     user': (String | None) = None,
     pass': (String | None) = None
@@ -22,7 +23,7 @@ class MQTTConnectionNotify is TCPConnectionNotify
     host = host'
     port = port'
     _connection = _MQTTConnection(consume client', host', port', keepalive', version',
-      retry_connection', client_id', user', pass')
+      retry_connection', will_packet', client_id', user', pass')
 
   fun ref connected(conn: TCPConnection ref) =>
     _connection.connected(conn)

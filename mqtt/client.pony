@@ -8,13 +8,13 @@ interface MQTTClient
     """
     None
 
-  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket val) =>
+  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
     """
     Called upon receiving a PUBLISH message from the broker. Receives said message.
     """
     None
 
-  fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket val) =>
+  fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket) =>
     """
     Called after succesfully publishing a message to the broker. Receives said message.
     """

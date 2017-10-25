@@ -16,16 +16,15 @@ Pony MQTT is currently under pre-alpha development. Revisions are greatly apprec
 
 ### Pending features
 
-* Will support.
-* Retain support.
+* DUP flag on publish.
+* Auto-retry connection on socket or protocol errors if `retry_connection` is set.
 * Evaluate if any refactoring is necessary.
 
 ### Planned features
 
-* Auto-retry connection on socket or protocol errors if `retry_connection` is set.
 * Auto-retry connection with older protocol version upon receiving "invalid version" CONNACK error code.
 * Improve documentation.
-* Notify tests.
+* MQTTConnection tests.
 * MQTTv5 support.
 
 ## Installation

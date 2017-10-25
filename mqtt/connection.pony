@@ -14,7 +14,7 @@ interface MQTTConnection
   """
   fun ref disconnect() =>
     """
-    Ends connection to the server.
+    Ends connection to the server. Any Will Message will be discarded.
     """
     None
 
@@ -30,7 +30,7 @@ interface MQTTConnection
     """
     None
 
-  fun ref publish(packet: MQTTPacket, retain: Bool = false) =>
+  fun ref publish(packet: MQTTPacket) =>
     """
     Publishes a packet to a topic, with QoS settings.
     """
@@ -51,6 +51,7 @@ actor _MQTTConnection is MQTTConnection
   let _pass: (String | None)
   let _version: MQTTVersion
   let _retry_connection: Bool
+  let _will_packet: (MQTTPacket | None)
   let _client_id: String
   let _ping_time: U64
   let _resend_time: U64
@@ -74,7 +75,8 @@ actor _MQTTConnection is MQTTConnection
     port': String = "1883",
     keepalive': U16 = 15,
     version': MQTTVersion = MQTTv311,
-    retry_connection': Bool = false, //TODO
+    retry_connection': Bool = false,
+    will_packet': (MQTTPacket | None) = None,
     client_id': String = "",
     user': (String | None) = None,
     pass': (String | None) = None
@@ -90,6 +92,7 @@ actor _MQTTConnection is MQTTConnection
     _pass = if _user is None then None else pass' end
     _version = version'
     _retry_connection = retry_connection'
+    _will_packet = will_packet'
     _client_id = if client_id'.size() >= 6 then client_id' else _random_string() end
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
@@ -221,7 +224,8 @@ actor _MQTTConnection is MQTTConnection
         let byte: U8 = buffer.peek_u8(0)?
         let qos: U8 = (byte and 0x06) >> 1
         if qos == 0x03 then error end
-        //TODO: DUP (0x08) and RETAIN (0x01) flags
+        let retain: Bool = (byte and 0x01) == 0x01
+        //TODO: DUP (0x08) flag
         buffer.skip(1)?
         // Skip remaining length field
         var temp: U8 = 0x80
@@ -237,7 +241,7 @@ actor _MQTTConnection is MQTTConnection
           0
         end
         let message: Array[U8] val = buffer.block(buffer.size())?
-        let packet = MQTTPacket(topic, message, qos, id)
+        let packet = MQTTPacket(topic, message, qos, retain, id)
         // QoS
         match qos
         | 0x1 => _puback(packet)
@@ -355,12 +359,20 @@ actor _MQTTConnection is MQTTConnection
       end
     )
     // Flags
-    // TODO: Add will
     buffer.u8(
       0x02 or
       if _user is String then
         if _pass is String then 0xC0 else 0x80 end
-      else 0x00 end
+      else 0x00 end or
+        try
+          let will: MQTTPacket = _will_packet as MQTTPacket
+            if will.retain then
+              0x20
+            else
+              0x00
+            end or
+              (will.qos << 3) or 0x04
+        else 0x00 end
     )
     // Keepalive
     buffer.u16_be(_keepalive)
@@ -368,6 +380,14 @@ actor _MQTTConnection is MQTTConnection
     // ID
     buffer.u16_be(_client_id.size().u16())
     buffer.write(_client_id)
+    // Will
+    try
+      let will: MQTTPacket = _will_packet as MQTTPacket
+      buffer.u16_be(will.topic.size().u16())
+      buffer.write(will.topic)
+      buffer.u16_be(will.message.size().u16())
+      buffer.write(will.message)
+    end
     // Auth
     try
       if _user is String then
@@ -478,18 +498,18 @@ actor _MQTTConnection is MQTTConnection
       (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
-  fun ref publish(packet: MQTTPacket, retain: Bool = false) =>
+  fun ref publish(packet: MQTTPacket) =>
     """
     Publishes a packet to a specified topic.
 
     Strips the connection-specific control ID when requested by the user.
     """
     _publish(MQTTPacket(
-      packet.topic, packet.message, packet.qos,
+      packet.topic, packet.message, packet.qos, packet.retain,
       if _sent_packets.contains(packet.id) then 0 else packet.id end
-    ), retain)
+    ))
 
-  fun ref _publish(packet: MQTTPacket, retain: Bool = false) =>
+  fun ref _publish(packet: MQTTPacket) =>
     """
     Sends the packet to the topic.
     """
@@ -511,7 +531,7 @@ actor _MQTTConnection is MQTTConnection
         _packet_id
       else packet.id end
       buffer.u16_be(id')
-      _sent_packets.update(id', MQTTPacket(packet.topic, packet.message, packet.qos, id'))
+      _sent_packets.update(id', MQTTPacket(packet.topic, packet.message, packet.qos, packet.retain, id'))
     end
     // -- Payload --
     buffer.write(packet.message)
@@ -521,7 +541,7 @@ actor _MQTTConnection is MQTTConnection
       0x30 or
       (if (_sent_packets.contains(packet.id)) then 0x08 else 0x00 end) or
       (packet.qos << 1) or
-      (if retain then 0x01 else 0x00 end)
+      (if packet.retain then 0x01 else 0x00 end)
     )
     msg_buffer.write(_remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
