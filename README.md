@@ -11,7 +11,6 @@ Pony MQTT is currently under pre-alpha development. Revisions are greatly apprec
 ### Pending features
 
 * MQTTv31 support.
-* Topic validator unit tests.
 * Identify potential bugs.
 * Evaluate if any refactoring is necessary.
 
