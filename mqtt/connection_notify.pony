@@ -6,7 +6,7 @@ class MQTTConnectionNotify is TCPConnectionNotify
   """
   let host: String
   let port: String
-  let _connection: MQTTConnection
+  let _connection: _MQTTConnection
 
   new iso create(
     client': MQTTClient iso,
@@ -21,7 +21,7 @@ class MQTTConnectionNotify is TCPConnectionNotify
   ) =>
     host = host'
     port = port'
-    _connection = MQTTConnection(consume client', host', port', keepalive', version',
+    _connection = _MQTTConnection(consume client', host', port', keepalive', version',
       retry_connection', client_id', user', pass')
 
   fun ref connected(conn: TCPConnection ref) =>

@@ -8,7 +8,35 @@ primitive MQTTv311
 primitive MQTTv31
 type MQTTVersion is (MQTTv311 | MQTTv31)
 
-actor MQTTConnection
+interface MQTTConnection
+  """
+  A public interface to easily pass messages to the broker.
+  """
+  fun ref disconnect() =>
+    """
+    Ends connection to the server.
+    """
+    None
+
+  fun ref subscribe(topic: String, qos: U8 = 0) =>
+    """
+    Subscribes to a topic.
+    """
+    None
+
+  fun ref unsubscribe(topic: String) =>
+    """
+    Unsubscribes from a topic.
+    """
+    None
+
+  fun ref publish(packet: MQTTPacket, retain: Bool = false) =>
+    """
+    Publishes a packet to a topic, with QoS settings.
+    """
+    None
+
+actor _MQTTConnection is MQTTConnection
   """
   An actor that handles the entire MQTT connection.
 
