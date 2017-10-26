@@ -14,12 +14,6 @@ Pony MQTT is in alpha version. Revisions are greatly appreciated, since this lib
 * Authentication and auto-retry connection.
 * QoS for publish, subscribe, unsubscribe.
 
-### Planned features
-
-* Improve documentation.
-* MQTTConnection tests.
-* MQTTv5 support.
-
 ## Installation
 
 * Install [pony-stable](https://github.com/ponylang/pony-stable)
