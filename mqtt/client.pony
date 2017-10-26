@@ -1,6 +1,6 @@
-interface MQTTClient
+interface MQTTConnectionNotify
   """
-  An interface to create an event-based client class for your MQTT connections.
+  A notify interface to create an event-based client class for your MQTT connections.
   """
   fun ref on_connect(conn: MQTTConnection ref) =>
     """

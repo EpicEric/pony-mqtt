@@ -12,13 +12,13 @@ actor MQTTConnection
   """
   An actor that handles the entire MQTT connection.
 
-  It can receive data through a TCPConnectionNotify, or commands from an MQTTClient.
-  This allows for all expected abilities from a regular MQTT client.
+  It can receive data through a TCPConnectionNotify, or commands from an MQTTConnectionNotify.
+  This allows for all expected capabilities of a regular MQTT client.
   """
   let auth: TCPConnectionAuth
   let host: String
   let port: String
-  let _client: MQTTClient
+  let _client: MQTTConnectionNotify
   let _keepalive: U16
   let _user: (String | None)
   let _pass: (String | None)
@@ -44,7 +44,7 @@ actor MQTTConnection
 
   new create(
     auth': TCPConnectionAuth,
-    client': MQTTClient iso,
+    client': MQTTConnectionNotify iso,
     host': String = "localhost",
     port': String = "1883",
     keepalive': U16 = 15,
@@ -72,7 +72,7 @@ actor MQTTConnection
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
-    let notify: MQTTConnectionNotify iso = MQTTConnectionNotify(this)
+    let notify: MQTTConnectionManager iso = MQTTConnectionManager(this)
     TCPConnection(auth, consume notify, host, port)
 
   fun tag _random_string(length: USize = 8): String val =>
@@ -350,7 +350,7 @@ actor MQTTConnection
       else error end
       _conn = TCPConnection(
         auth,
-        MQTTConnectionNotify(connection),
+        MQTTConnectionManager(connection),
         host,
         port
       )

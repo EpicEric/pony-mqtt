@@ -1,7 +1,6 @@
 use "../mqtt"
 
-
-class MyClient is MQTTClient
+class MQTTClient is MQTTConnectionNotify
   let _env: Env
 
   new create(env: Env) =>
@@ -34,13 +33,12 @@ class MyClient is MQTTClient
   fun ref on_error(conn: MQTTConnection ref, message: String) =>
     _env.out.print("[MQTT-Error] " + message)
 
-
 actor Main
   new create(env: Env) =>
     try
       MQTTConnection(
         env.root as AmbientAuth,
-        recover MyClient(env) end,
+        recover MQTTClient(env) end,
         "localhost",
         "1883",
         15,
