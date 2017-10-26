@@ -72,7 +72,7 @@ actor MQTTConnection
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
-    let notify: MQTTConnectionManager iso = MQTTConnectionManager(this)
+    let notify: _MQTTConnectionManager iso = _MQTTConnectionManager(this)
     TCPConnection(auth, consume notify, host, port)
 
   fun tag _random_string(length: USize = 8): String val =>
@@ -104,12 +104,12 @@ actor MQTTConnection
     until length == 0 end
     buffer
 
-  be connected(conn: TCPConnection) =>
+  be connected(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     _end_connection(false)
     _conn = conn
     _connect()
 
-  be connect_failed(conn: TCPConnection) =>
+  be connect_failed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     if _retry_connection and not(_conn is None) then
       _client.on_error(this, "[CONNECT] Could not establish a connection; retrying...")
       _new_conn()
@@ -118,7 +118,7 @@ actor MQTTConnection
       _client.on_error(this, "[CONNECT] Could not establish a connection")
     end
 
-  be closed(conn: TCPConnection) =>
+  be closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     if _connected then
       if _retry_connection then
         _client.on_error(this, "Connection closed by remote server; reconnecting...")
@@ -132,9 +132,7 @@ actor MQTTConnection
       _client.on_disconnect(this)
     end
 
-  be received(conn: TCPConnection, data: Array[U8] iso,
-    times: USize)
-  =>
+  be received(conn: TCPConnection, notify: TCPConnectionNotify tag, data: Array[U8] iso) =>
     """
     Combines and breaks received data into control packets, based on the
     remaining length value.
@@ -350,7 +348,7 @@ actor MQTTConnection
       else error end
       _conn = TCPConnection(
         auth,
-        MQTTConnectionManager(connection),
+        _MQTTConnectionManager(connection),
         host,
         port
       )
