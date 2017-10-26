@@ -1,4 +1,4 @@
-use "../mqtt"
+use "mqtt"
 
 class MQTTClient is MQTTConnectionNotify
   let _env: Env
