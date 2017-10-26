@@ -8,35 +8,7 @@ primitive MQTTv311
 primitive MQTTv31
 type MQTTVersion is (MQTTv311 | MQTTv31)
 
-interface MQTTConnection
-  """
-  A public interface to easily pass messages to the broker.
-  """
-  fun ref disconnect() =>
-    """
-    Ends connection to the server. Any Will Message will be discarded.
-    """
-    None
-
-  fun ref subscribe(topic: String, qos: U8 = 0) =>
-    """
-    Subscribes to a topic.
-    """
-    None
-
-  fun ref unsubscribe(topic: String) =>
-    """
-    Unsubscribes from a topic.
-    """
-    None
-
-  fun ref publish(packet: MQTTPacket) =>
-    """
-    Publishes a packet to a topic, with QoS settings.
-    """
-    None
-
-actor _MQTTConnection is MQTTConnection
+actor MQTTConnection
   """
   An actor that handles the entire MQTT connection.
 
@@ -71,8 +43,8 @@ actor _MQTTConnection is MQTTConnection
   var _resend_timer: (Timer tag | None) = None
 
   new create(
-    client': MQTTClient iso,
     auth': TCPConnectionAuth,
+    client': MQTTClient iso,
     host': String = "localhost",
     port': String = "1883",
     keepalive': U16 = 15,
@@ -88,22 +60,20 @@ actor _MQTTConnection is MQTTConnection
     port = port'
     _client = consume client'
     _keepalive = if keepalive' > 5 then keepalive' else 5 end
+    _version = version'
     _user =
       try
         if (user' as String).size() > 0 then user' else None end
       else None end
     _pass = if _user is None then None else pass' end
-    _version = version'
     _retry_connection = retry_connection'
     _will_packet = will_packet'
     _client_id = if client_id'.size() >= 6 then client_id' else _random_string() end
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
-    _unimplemented.update(0x10, "CONNECT")
-    _unimplemented.update(0x80, "SUBSCRIBE")
-    _unimplemented.update(0xA0, "UNSUBSCRIBE")
-    _unimplemented.update(0xC0, "PINGREQ")
-    _unimplemented.update(0xE0, "DISCONNECT")
+    _update_version(version')
+    let notify: MQTTConnectionNotify iso = MQTTConnectionNotify(this)
+    TCPConnection(auth, consume notify, host, port)
 
   fun tag _random_string(length: USize = 8): String val =>
     let length': USize =
@@ -356,22 +326,31 @@ actor _MQTTConnection is MQTTConnection
     _sub_topics.clear()
     _unsub_topics.clear()
 
+  fun ref _update_version(version: MQTTVersion) =>
+    _version = version
+    _unimplemented.clear()
+    _unimplemented.update(0x10, "CONNECT")
+    _unimplemented.update(0x80, "SUBSCRIBE")
+    _unimplemented.update(0xA0, "UNSUBSCRIBE")
+    _unimplemented.update(0xC0, "PINGREQ")
+    _unimplemented.update(0xE0, "DISCONNECT")
+
   be _new_conn(connack_error: U8 = 0) =>
     _end_connection()
     try
-      let connection: _MQTTConnection = this
+      let connection: MQTTConnection = this
       match connack_error
       | 0 => None
       | 1 =>
-        _version = match _version
-        | MQTTv311 => MQTTv31
+        match _version
+        | MQTTv311 => _update_version(MQTTv31)
         else error end
       | 2 =>
         _client_id = _random_string()
       else error end
       _conn = TCPConnection(
         auth,
-        MQTTConnectionNotify._reconnect(connection, auth, host, port),
+        MQTTConnectionNotify(connection),
         host,
         port
       )
@@ -653,13 +632,13 @@ actor _MQTTConnection is MQTTConnection
       (_conn as TCPConnection).writev(buffer.done())
     end
 
-  be ping() =>
+  be _send_ping() =>
     """
     User-callable ping.
     """
     _ping()
 
-  be resend_packets() =>
+  be _resend_packets() =>
     """
     Handles any unconfirmed QoS 1 or 2 publish packets by
     redoing its action.

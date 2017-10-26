@@ -38,14 +38,12 @@ class MyClient is MQTTClient
 actor Main
   new create(env: Env) =>
     try
-      MQTTConnectionConsumer(
-        MQTTConnectionNotify(
-          recover MyClient(env) end,
-          env.root as AmbientAuth,
-          "localhost",
-          "1883",
-          15,
-          MQTTv311
-        )
+      MQTTConnection(
+        env.root as AmbientAuth,
+        recover MyClient(env) end,
+        "localhost",
+        "1883",
+        15,
+        MQTTv311
       )
     end

@@ -4,35 +4,10 @@ class MQTTConnectionNotify is TCPConnectionNotify
   """
   A TCPConnectionNotify class that redirects all messages to an MQTTConnection actor.
   """
-  let _connection: _MQTTConnection
-  let auth: TCPConnectionAuth
-  let host: String
-  let port: String
+  let _connection: MQTTConnection
 
-  new iso create(
-    client': MQTTClient iso,
-    auth': TCPConnectionAuth,
-    host': String = "localhost",
-    port': String = "1883",
-    keepalive': U16 = 15,
-    version': MQTTVersion = MQTTv311,
-    retry_connection': Bool = false,
-    will_packet': (MQTTPacket | None) = None,
-    client_id': String = "",
-    user': (String | None) = None,
-    pass': (String | None) = None
-  ) =>
-    auth = auth'
-    host = host'
-    port = port'
-    _connection = _MQTTConnection(consume client', auth', host', port', keepalive',
-      version', retry_connection', will_packet', client_id', user', pass')
-
-  new iso _reconnect(connection': _MQTTConnection, auth': TCPConnectionAuth, host': String, port': String) =>
-    _connection = connection'
-    auth = auth'
-    host = host'
-    port = port'
+  new iso create(connection: MQTTConnection) =>
+    _connection = connection
 
   fun ref connected(conn: TCPConnection ref) =>
     _connection.connected(conn)
