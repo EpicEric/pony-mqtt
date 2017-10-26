@@ -43,16 +43,15 @@ actor _MQTTConnection is MQTTConnection
   It can receive data through a TCPConnectionNotify, or commands from an MQTTClient.
   This allows for all expected abilities from a regular MQTT client.
   """
+  let auth: TCPConnectionAuth
   let host: String
   let port: String
   let _client: MQTTClient
   let _keepalive: U16
   let _user: (String | None)
   let _pass: (String | None)
-  let _version: MQTTVersion
   let _retry_connection: Bool
   let _will_packet: (MQTTPacket | None)
-  let _client_id: String
   let _ping_time: U64
   let _resend_time: U64
   let _timers: Timers = Timers
@@ -63,6 +62,8 @@ actor _MQTTConnection is MQTTConnection
   let _confirmed_packets: Map[U16, MQTTPacket val] = _confirmed_packets.create()
   let _sub_topics: Map[U16, String] = _sub_topics.create()
   let _unsub_topics: Map[U16, String] = _unsub_topics.create()
+  var _version: MQTTVersion
+  var _client_id: String
   var _connected: Bool = false
   var _conn: (TCPConnection | None) = None
   var _packet_id: U16 = 0
@@ -71,6 +72,7 @@ actor _MQTTConnection is MQTTConnection
 
   new create(
     client': MQTTClient iso,
+    auth': TCPConnectionAuth,
     host': String = "localhost",
     port': String = "1883",
     keepalive': U16 = 15,
@@ -81,6 +83,7 @@ actor _MQTTConnection is MQTTConnection
     user': (String | None) = None,
     pass': (String | None) = None
   ) =>
+    auth = auth'
     host = host'
     port = port'
     _client = consume client'
@@ -137,17 +140,25 @@ actor _MQTTConnection is MQTTConnection
     _connect()
 
   be connect_failed(conn: TCPConnection) =>
-    _end_connection()
-    _client.on_error(this, "[CONNECT] Could not establish a connection")
-    if _retry_connection then _connect() end
+    if _retry_connection and not(_conn is None) then
+      _client.on_error(this, "[CONNECT] Could not establish a connection; retrying...")
+      _new_conn()
+    else
+      _end_connection()
+      _client.on_error(this, "[CONNECT] Could not establish a connection")
+    end
 
   be closed(conn: TCPConnection) =>
-    let connected' = _connected
-    _end_connection()
-    if connected' then
-      _client.on_error(this, "Connection closed by remote server")
-      if _retry_connection then _connect() end
+    if _connected then
+      if _retry_connection then
+        _client.on_error(this, "Connection closed by remote server; reconnecting...")
+        _new_conn()
+      else
+        _end_connection()
+        _client.on_error(this, "Connection closed by remote server")
+      end
     else
+      _end_connection()
       _client.on_disconnect(this)
     end
 
@@ -214,11 +225,19 @@ actor _MQTTConnection is MQTTConnection
           _ping_timer = ping_timer
           _timers(consume ping_timer)
           _client.on_connect(this)
-        | 1 => _client.on_error(this, "[CONNACK] Unnacceptable protocol version")
-        | 2 => _client.on_error(this, "[CONNACK] Connection ID rejected")
-        | 3 => _client.on_error(this, "[CONNACK] Server unavailable")
-        | 4 => _client.on_error(this, "[CONNACK] Bad user name or password")
-        | 5 => _client.on_error(this, "[CONNACK] Unauthorized client")
+        | 1 =>
+          _client.on_error(this, "[CONNACK] Unnacceptable protocol version")
+          if _retry_connection then _new_conn(1) end
+        | 2 =>
+          _client.on_error(this, "[CONNACK] Connection ID rejected")
+          if _retry_connection then _new_conn(2) end
+        | 3 =>
+          _client.on_error(this, "[CONNACK] Server unavailable")
+          if _retry_connection then _new_conn(3) end
+        | 4 =>
+          _client.on_error(this, "[CONNACK] Bad user name or password")
+        | 5 =>
+          _client.on_error(this, "[CONNACK] Unauthorized client")
         else error end
       | 0x3 => // PUBLISH
         let byte: U8 = buffer.peek_u8(0)?
@@ -324,7 +343,10 @@ actor _MQTTConnection is MQTTConnection
     Clears data when the connection is ended.
     """
     _connected = false
-    if clear_conn then _conn = None end
+    if clear_conn then
+      try (_conn as TCPConnection).dispose() end
+      _conn = None
+    end
     _packet_id = 0
     _data_buffer.clear()
     _clean_timers()
@@ -333,6 +355,27 @@ actor _MQTTConnection is MQTTConnection
     _confirmed_packets.clear()
     _sub_topics.clear()
     _unsub_topics.clear()
+
+  be _new_conn(connack_error: U8 = 0) =>
+    _end_connection()
+    try
+      let connection: _MQTTConnection = this
+      match connack_error
+      | 0 => None
+      | 1 =>
+        _version = match _version
+        | MQTTv311 => MQTTv31
+        else error end
+      | 2 =>
+        _client_id = _random_string()
+      else error end
+      _conn = TCPConnection(
+        auth,
+        MQTTConnectionNotify._reconnect(connection, auth, host, port),
+        host,
+        port
+      )
+    end
 
   fun ref _connect() =>
     """
