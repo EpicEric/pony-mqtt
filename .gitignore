@@ -1,4 +1,4 @@
 build/*
-examples/**
+examples/*/*
 !examples/*/*.pony
 !examples/*/bundle.json
