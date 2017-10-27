@@ -228,7 +228,7 @@ actor MQTTConnection
           0
         end
         let message: Array[U8] val = buffer.block(buffer.size())?
-        let packet = MQTTPacket(topic, message, qos, retain, id)
+        let packet = MQTTPacket(topic, message, retain, qos, id)
         // QoS
         match qos
         | 0x1 => _puback(packet)
@@ -287,7 +287,7 @@ actor MQTTConnection
             .>append(control_code_string)
             .>append("] Unexpected control code; disconnecting")
           _client.on_error(this, consume output_err)
-          disconnect()
+          disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
           let control_code_string = recover String.from_array([
@@ -298,12 +298,12 @@ actor MQTTConnection
             .>append(consume control_code_string)
             .>append("] Unknown control code; disconnecting")
           _client.on_error(this, consume output_err)
-          disconnect()
+          disconnect(true)
         end
       end
     else
       _client.on_error(this, "Unexpected format when processing packet; disconnecting")
-      disconnect()
+      disconnect(true)
     end
 
   fun ref _end_connection(clear_conn: Bool = true) =>
@@ -439,7 +439,7 @@ actor MQTTConnection
     _resend_timer = None
     _timers.dispose()
 
-  fun ref disconnect() =>
+  fun ref disconnect(err: Bool = false) =>
     """
     Ends the MQTT and TCP connections.
     """
@@ -452,7 +452,7 @@ actor MQTTConnection
     try
       (_conn as TCPConnection).writev(buffer.done())
       (_conn as TCPConnection).dispose()
-       _end_connection()
+      if not(err) then _end_connection() end
     end
 
   fun ref subscribe(topic: String, qos: U8 = 0) =>
@@ -525,7 +525,7 @@ actor MQTTConnection
     Strips the connection-specific control ID when requested by the user.
     """
     _publish(MQTTPacket(
-      packet.topic, packet.message, packet.qos, packet.retain,
+      packet.topic, packet.message, packet.retain, packet.qos,
       if _sent_packets.contains(packet.id) then 0 else packet.id end
     ))
 
@@ -551,7 +551,7 @@ actor MQTTConnection
         _packet_id
       else packet.id end
       buffer.u16_be(id')
-      _sent_packets.update(id', MQTTPacket(packet.topic, packet.message, packet.qos, packet.retain, id'))
+      _sent_packets.update(id', MQTTPacket(packet.topic, packet.message, packet.retain, packet.qos, id'))
     end
     // -- Payload --
     buffer.write(packet.message)
