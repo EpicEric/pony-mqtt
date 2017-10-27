@@ -3,9 +3,7 @@ use "time"
 
 class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
   """
-  A notifier for a simple Homie-compliant device.
-
-  More info in: https://github.com/marvinroger/homie
+  A notifier for our device.
   """
   let _env: Env
   let _id: String
@@ -16,6 +14,7 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     _id = id
 
   fun ref on_connect(conn: MQTTConnection ref) =>
+    conn.subscribe("homie/" + _id + "/temperature/set")
     try
         (_device as HomieDevice).restart()
     else

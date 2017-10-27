@@ -287,7 +287,7 @@ actor MQTTConnection
             .>append(control_code_string)
             .>append("] Unexpected control code; disconnecting")
           _client.on_error(this, consume output_err)
-          disconnect(true)
+          _disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
           let control_code_string = recover String.from_array([
@@ -298,12 +298,12 @@ actor MQTTConnection
             .>append(consume control_code_string)
             .>append("] Unknown control code; disconnecting")
           _client.on_error(this, consume output_err)
-          disconnect(true)
+          _disconnect(true)
         end
       end
     else
       _client.on_error(this, "Unexpected format when processing packet; disconnecting")
-      disconnect(true)
+      _disconnect(true)
     end
 
   fun ref _end_connection(clear_conn: Bool = true) =>
@@ -439,10 +439,7 @@ actor MQTTConnection
     _resend_timer = None
     _timers.dispose()
 
-  fun ref disconnect(err: Bool = false) =>
-    """
-    Ends the MQTT and TCP connections.
-    """
+  fun ref _disconnect(err: Bool = false) =>
     if not(_connected) then
       _client.on_error(this, "Cannot disconnect: Already disconnected")
       return
@@ -455,10 +452,7 @@ actor MQTTConnection
       if not(err) then _end_connection() end
     end
 
-  fun ref subscribe(topic: String, qos: U8 = 0) =>
-    """
-    Subscribes to a topic.
-    """
+  fun ref _subscribe(topic: String, qos: U8 = 0) =>
     if not(MQTTTopic.validate_subscribe(topic)) then
       _client.on_error(this, "Cannot subscribe: Invalid topic")
       return
@@ -489,10 +483,7 @@ actor MQTTConnection
       (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
-  fun ref unsubscribe(topic: String) =>
-    """
-    Unsubscribes from a topic.
-    """
+  fun ref _unsubscribe(topic: String) =>
     if not(MQTTTopic.validate_subscribe(topic)) then
       _client.on_error(this, "Cannot unsubscribe: Invalid topic")
       return
@@ -518,21 +509,7 @@ actor MQTTConnection
       (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
-  fun ref publish(packet: MQTTPacket) =>
-    """
-    Publishes a packet to a specified topic.
-
-    Strips the connection-specific control ID when requested by the user.
-    """
-    _publish(MQTTPacket(
-      packet.topic, packet.message, packet.retain, packet.qos,
-      if _sent_packets.contains(packet.id) then 0 else packet.id end
-    ))
-
   fun ref _publish(packet: MQTTPacket) =>
-    """
-    Sends the packet to the topic.
-    """
     if not(MQTTTopic.validate_publish(packet.topic)) then
       _client.on_error(this, "Cannot publish: Invalid topic")
       return
@@ -652,3 +629,32 @@ actor MQTTConnection
         _pubcomp(packet)
       end
     end
+
+  be disconnect(err: Bool = false) =>
+    """
+    Ends the MQTT and TCP connections.
+    """
+    _disconnect(err)
+  
+  be subscribe(topic: String, qos: U8 = 0) =>
+    """
+    Subscribes to a topic.
+    """
+    _subscribe(topic, qos)
+  
+  be unsubscribe(topic: String) =>
+    """
+    Unsubscribes from a topic.
+    """
+    _unsubscribe(topic)
+
+  be publish(packet: MQTTPacket) =>
+    """
+    Publishes a packet to a specified topic.
+
+    Strips the connection-specific control ID when requested by the user.
+    """
+    _publish(MQTTPacket(
+      packet.topic, packet.message, packet.retain, packet.qos,
+      if _sent_packets.contains(packet.id) then 0 else packet.id end
+    ))

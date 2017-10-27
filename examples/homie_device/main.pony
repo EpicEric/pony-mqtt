@@ -2,7 +2,7 @@ use "mqtt"
 
 actor Main
   new create(env: Env) =>
-    let id = "506f6e79"
+    let id = "cpu506f6e79"
     let will = MQTTPacket(
       "homie/" + id + "/$online",
       "false".array(),
