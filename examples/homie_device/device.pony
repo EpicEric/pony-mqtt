@@ -1,6 +1,9 @@
 use "mqtt"
 use "time"
 
+use "path:./"
+use "lib:ffi-sensor"
+
 actor HomieDevice
   """
   A very simple Homie-compliant device.
@@ -21,11 +24,12 @@ actor HomieDevice
     _conn = conn
     _id = id
     base_topic = "homie/" + _id + "/"
+    _conn.subscribe(base_topic + "temperature/set", 1)
     _startup()
 
   fun ref _startup() =>
     _start_time = Time.seconds()
-    let timer_interval' = Timer(HomieTimerInterval(this), 0, 10_000_000_000)
+    let timer_interval' = Timer(HomieTimerInterval(this), 0, 15_000_000_000)
     _timer_interval = timer_interval'
     _timers(consume timer_interval')
     let timer_data' = Timer(HomieTimerData(this), 0, 500_000_000)
@@ -33,17 +37,29 @@ actor HomieDevice
     _timers(consume timer_data')
     publish_start()
 
+  fun tag _make_buffer(size: USize): String iso^ =>
+    recover String.from_cpointer(
+      @pony_alloc[Pointer[U8]](@pony_ctx[Pointer[None] iso](), size), size
+    ) end
+
   be publish_start() =>
     """
     Publish packets on startup.
     """
+    let ip = _make_buffer(16)
+    let mac = _make_buffer(18)
+    @pony_network_address[None](ip.cpointer(), mac.cpointer())
+    ip.recalc()
+    mac.recalc()
+    let ip_str: String = consume ip
+    let mac_str: String = consume mac
     let packet_array: Array[(String, String)] = [
       (base_topic + "$homie", "2.1.0")
       (base_topic + "$online", "true")
       (base_topic + "$name", "CPU temperature sensor")
-      (base_topic + "$localip", "TODO")
-      (base_topic + "$mac", "TODO")
-      (base_topic + "$stats/interval", "10")
+      (base_topic + "$localip", ip_str)
+      (base_topic + "$mac", mac_str)
+      (base_topic + "$stats/interval", "15")
       (base_topic + "$fw/name", "pony-homie-cpu")
       (base_topic + "$fw/version", "1.0")
       (base_topic + "$implementation", "pony-mqtt")
@@ -76,16 +92,20 @@ actor HomieDevice
     """
     Publish data packets frequently.
     """
+    let temp = _make_buffer(7)
+    @pony_cpu_temperature[None](temp.cpointer())
+    temp.recalc()
+    let temp_str: String = consume temp
     _conn.publish(MQTTPacket(
       base_topic + "temperature/degrees",
-      "TODO".array(),
+      temp_str.array(),
       true,
       1
     ))
 
   be message(packet: MQTTPacket) =>
     """
-    Replies to server requests.
+    Interact with incoming messages.
     """
     None
 

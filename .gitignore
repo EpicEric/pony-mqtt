@@ -1,5 +1,6 @@
 build/*
 examples/*/*
 !examples/*/*.pony
+!examples/*/*.c
 !examples/*/bundle.json
 !examples/*/Makefile

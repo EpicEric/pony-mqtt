@@ -14,7 +14,6 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     _id = id
 
   fun ref on_connect(conn: MQTTConnection ref) =>
-    conn.subscribe("homie/" + _id + "/temperature/set")
     try
         (_device as HomieDevice).restart()
     else
