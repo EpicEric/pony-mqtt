@@ -2,3 +2,4 @@ build/*
 examples/*/*
 !examples/*/*.pony
 !examples/*/bundle.json
+!examples/*/Makefile
