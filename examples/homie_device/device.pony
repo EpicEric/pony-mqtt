@@ -1,7 +1,7 @@
 use "mqtt"
 use "time"
 
-use "path:./"
+use "path:lib/"
 use "lib:ffi-sensor"
 
 actor HomieDevice
@@ -51,14 +51,12 @@ actor HomieDevice
     @pony_network_address[None](ip.cpointer(), mac.cpointer())
     ip.recalc()
     mac.recalc()
-    let ip_str: String = consume ip
-    let mac_str: String = consume mac
     let packet_array: Array[(String, String)] = [
       (base_topic + "$homie", "2.1.0")
       (base_topic + "$online", "true")
       (base_topic + "$name", "CPU temperature sensor")
-      (base_topic + "$localip", ip_str)
-      (base_topic + "$mac", mac_str)
+      (base_topic + "$localip", consume ip)
+      (base_topic + "$mac", consume mac)
       (base_topic + "$stats/interval", "15")
       (base_topic + "$fw/name", "pony-homie-cpu")
       (base_topic + "$fw/version", "1.0")
@@ -99,7 +97,7 @@ actor HomieDevice
     _conn.publish(MQTTPacket(
       base_topic + "temperature/degrees",
       temp_str.array(),
-      true,
+      false,
       1
     ))
 

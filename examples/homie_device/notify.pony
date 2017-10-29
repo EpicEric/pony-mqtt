@@ -1,5 +1,4 @@
 use "mqtt"
-use "time"
 
 class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
   """
@@ -22,7 +21,6 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
 
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
     try (_device as HomieDevice).message(packet) end
-    None
 
   fun ref on_error(conn: MQTTConnection ref, message: String) =>
     _env.out.print("MqttError: " + message)

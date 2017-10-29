@@ -1,4 +1,4 @@
-build/homie_device: build .deps *.pony libffi-sensor.so
+build/homie_device: build .deps *.pony lib/libffi-sensor.so
 	stable env ponyc -o build --debug
 
 build:
@@ -8,14 +8,16 @@ build:
 	rm -rf .deps
 	stable fetch
 
-libffi-sensor.so: sensor.c
-	gcc -c -Wall -Werror -fpic sensor.c
-	gcc -shared -o libffi-sensor.so sensor.o
+lib:
+	mkdir lib
+
+lib/libffi-sensor.so: lib sensor.c
+	gcc -c -Wall -Werror -fpic -o lib/sensor.o sensor.c
+	gcc -shared -o lib/libffi-sensor.so lib/sensor.o
 
 clean:
 	rm -rf .deps
 	rm -rf build
-	rm -f sensor.o
-	rm -f libffi-sensor.so
+	rm -rf lib
 
 .PHONY: clean

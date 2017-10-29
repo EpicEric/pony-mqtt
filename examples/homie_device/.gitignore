@@ -1,4 +1,3 @@
 build/*
 .deps/*
-*.o
-*.so
+lib/*
