@@ -32,10 +32,12 @@ class _TestTopicPublishInvalid is UnitTest
 
   fun ref apply(h: TestHelper) =>
     h.assert_false(MQTTTopic.validate_publish(""))
-    h.assert_false(MQTTTopic.validate_publish(String.from_array(recover Array[U8].init('a', 65536) end)))
+    h.assert_false(MQTTTopic.validate_publish(String.from_array(
+      recover Array[U8].init('a', 65536) end)))
     h.assert_false(MQTTTopic.validate_publish("+"))
     h.assert_false(MQTTTopic.validate_publish("#"))
-    h.assert_false(MQTTTopic.validate_publish(String.from_array(['A'; 0x00; 'B'])))
+    h.assert_false(MQTTTopic.validate_publish(String.from_array(
+      ['A'; 0x00; 'B'])))
     h.assert_false(MQTTTopic.validate_publish("123+456#789"))
     h.assert_false(MQTTTopic.validate_publish("$SYS/#"))
     h.assert_false(MQTTTopic.validate_publish("foo/+/bar"))
@@ -65,8 +67,10 @@ class _TestTopicSubscribeInvalid is UnitTest
 
   fun ref apply(h: TestHelper) =>
     h.assert_false(MQTTTopic.validate_subscribe(""))
-    h.assert_false(MQTTTopic.validate_subscribe(String.from_array(recover Array[U8].init('a', 65536) end)))
-    h.assert_false(MQTTTopic.validate_subscribe(String.from_array(['A'; 0x00; 'B'])))
+    h.assert_false(MQTTTopic.validate_subscribe(String.from_array(
+      recover Array[U8].init('a', 65536) end)))
+    h.assert_false(MQTTTopic.validate_subscribe(String.from_array(
+      ['A'; 0x00; 'B'])))
     h.assert_false(MQTTTopic.validate_subscribe("#/"))
     h.assert_false(MQTTTopic.validate_subscribe("#/hi"))
     h.assert_false(MQTTTopic.validate_subscribe("hel+lo"))

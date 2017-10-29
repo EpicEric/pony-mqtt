@@ -1,6 +1,7 @@
 interface MQTTConnectionNotify
   """
-  A notify interface to create an event-based client class for your MQTT connections.
+  A notify interface to create an event-based client class
+  for your MQTT connections.
   """
   fun ref on_connect(conn: MQTTConnection ref) =>
     """
@@ -10,25 +11,29 @@ interface MQTTConnectionNotify
 
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
     """
-    Called upon receiving a PUBLISH message from the broker. Receives said message.
+    Called upon receiving a PUBLISH message from the broker.
+    Receives said message.
     """
     None
 
   fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket) =>
     """
-    Called after succesfully publishing a message to the broker. Receives said message.
+    Called after succesfully publishing a message to the broker.
+    Receives said message.
     """
     None
 
   fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
     """
-    Called after successfully subscribing to a topic. Receives said topic and the granted QoS.
+    Called after successfully subscribing to a topic.
+    Receives said topic and the granted QoS.
     """
     None
 
   fun ref on_unsubscribe(conn: MQTTConnection ref, topic: String) =>
     """
-    Called after successfully unsubscribing from a topic. Receives said topic.
+    Called after successfully unsubscribing from a topic.
+    Receives said topic.
     """
     None
 

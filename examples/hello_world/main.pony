@@ -12,7 +12,8 @@ actor Main
   new create(env: Env) =>
     try
       MQTTConnection(
-        env.root as AmbientAuth, MQTTHelloWorldNotify,
-        "localhost", "1883"
-      )
+        env.root as AmbientAuth,
+        MQTTHelloWorldNotify,
+        "localhost",
+        "1883")
     end

@@ -50,7 +50,8 @@ actor Main
   new create(env: Env) =>
     try
       MQTTConnection(
-        env.root as AmbientAuth, MQTTSubNotify(env),
-        "localhost", "1883"
-      )
+        env.root as AmbientAuth,
+        MQTTSubNotify(env),
+        "localhost",
+        "1883")
     end

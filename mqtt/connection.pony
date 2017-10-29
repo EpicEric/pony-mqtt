@@ -4,16 +4,13 @@ use "net"
 use "random"
 use "time"
 
-primitive MQTTv311
-primitive MQTTv31
-type MQTTVersion is (MQTTv311 | MQTTv31)
-
 actor MQTTConnection
   """
   An actor that handles the entire MQTT connection.
 
-  It can receive data through a TCPConnectionNotify, or commands from an MQTTConnectionNotify.
-  This allows for all expected capabilities of a regular MQTT client.
+  It can receive data through a TCPConnectionNotify, or commands from an
+  MQTTConnectionNotify. This allows for all expected capabilities of
+  a regular MQTT client.
   """
   let auth: TCPConnectionAuth
   let host: String
@@ -29,9 +26,9 @@ actor MQTTConnection
   let _timers: Timers = Timers
   let _data_buffer: Reader = Reader
   let _unimplemented: Map[U8, String] = _unimplemented.create()
-  let _sent_packets: Map[U16, MQTTPacket val] = _sent_packets.create()
-  let _received_packets: Map[U16, MQTTPacket val] = _received_packets.create()
-  let _confirmed_packets: Map[U16, MQTTPacket val] = _confirmed_packets.create()
+  let _sent_packets: Map[U16, MQTTPacket] = _sent_packets.create()
+  let _received_packets: Map[U16, MQTTPacket] = _received_packets.create()
+  let _confirmed_packets: Map[U16, MQTTPacket] = _confirmed_packets.create()
   let _sub_topics: Map[U16, String] = _sub_topics.create()
   let _unsub_topics: Map[U16, String] = _unsub_topics.create()
   var _version: MQTTVersion
@@ -53,8 +50,8 @@ actor MQTTConnection
     will_packet': (MQTTPacket | None) = None,
     client_id': String = "",
     user': (String | None) = None,
-    pass': (String | None) = None
-  ) =>
+    pass': (String | None) = None)
+  =>
     auth = auth'
     host = host'
     port = port'
@@ -68,7 +65,12 @@ actor MQTTConnection
     _pass = if _user is None then None else pass' end
     _retry_connection = retry_connection'
     _will_packet = will_packet'
-    _client_id = if client_id'.size() >= 6 then client_id' else _random_string() end
+    _client_id = 
+      if client_id'.size() >= 6 then
+        client_id'
+      else
+        _random_string() 
+      end
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
@@ -81,7 +83,7 @@ actor MQTTConnection
         8
       else length end
     var string = recover String(length') end
-    let rand: Rand = Rand(Time.nanos()).>next()
+    let rand: Rand = Rand(Time.nanos()) .> next()
     let letters: String = "0123456789abcdef"
     for n in Range[USize](0, length') do
       let char = rand.int(letters.size().u64()).usize()
@@ -111,28 +113,40 @@ actor MQTTConnection
 
   be connect_failed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     if _retry_connection and not(_conn is None) then
-      _client.on_error(this, "[CONNECT] Could not establish a connection; retrying...")
+      _client.on_error(
+        this,
+        "[CONNECT] Could not establish a connection; retrying...")
       _new_conn()
     else
       _end_connection()
-      _client.on_error(this, "[CONNECT] Could not establish a connection")
+      _client.on_error(
+        this,
+        "[CONNECT] Could not establish a connection")
     end
 
   be closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     if _connected then
       if _retry_connection then
-        _client.on_error(this, "Connection closed by remote server; reconnecting...")
+        _client.on_error(
+          this,
+          "Connection closed by remote server; reconnecting...")
         _new_conn()
       else
         _end_connection()
-        _client.on_error(this, "Connection closed by remote server")
+        _client.on_error(
+          this,
+          "Connection closed by remote server")
       end
     else
       _end_connection()
       _client.on_disconnect(this)
     end
 
-  be received(conn: TCPConnection, notify: TCPConnectionNotify tag, data: Array[U8] iso) =>
+  be received(
+    conn: TCPConnection,
+    notify: TCPConnectionNotify tag,
+    data: Array[U8] iso)
+  =>
     """
     Combines and breaks received data into control packets, based on the
     remaining length value.
@@ -186,10 +200,12 @@ actor MQTTConnection
           _connected = true
           // Create a package resender timer and a keepalive timer
           _clean_timers()
-          let resend_timer = Timer(_MQTTPingTimer(this), _ping_time, _ping_time)
+          let resend_timer = Timer(
+            _MQTTPingTimer(this), _ping_time, _ping_time)
           _resend_timer = resend_timer
           _timers(consume resend_timer)
-          let ping_timer = Timer(_MQTTResendTimer(this), _resend_time, _resend_time)
+          let ping_timer = Timer(
+            _MQTTResendTimer(this), _resend_time, _resend_time)
           _ping_timer = ping_timer
           _timers(consume ping_timer)
           _client.on_connect(this)
@@ -222,11 +238,7 @@ actor MQTTConnection
         let topic_size: U16 = buffer.u16_be()?
         let topic_block = buffer.block(topic_size.usize())?
         let topic: String = String.from_array(consume topic_block)
-        let id: U16 = if qos != 0 then
-          buffer.u16_be()?
-        else
-          0
-        end
+        let id: U16 = if qos != 0 then buffer.u16_be()? else 0 end
         let message: Array[U8] val = buffer.block(buffer.size())?
         let packet = MQTTPacket(topic, message, retain, qos, id)
         // QoS
@@ -239,7 +251,8 @@ actor MQTTConnection
         if buffer.peek_u8(0)? != 0x40 then error end
         if buffer.size() != 4 then error end
         buffer.skip(2)?
-        _client.on_publish(this, _sent_packets.remove(buffer.u16_be()?)?._2)
+        _client.on_publish(this, _sent_packets.remove(
+          buffer.u16_be()?)?._2)
       | 0x5 => // PUBREC
         if buffer.peek_u8(0)? != 0x50 then error end
         if buffer.size() != 4 then error end
@@ -249,12 +262,14 @@ actor MQTTConnection
         if buffer.peek_u8(0)? != 0x62 then error end
         if buffer.size() != 4 then error end
         buffer.skip(2)?
-        _pubcomp(_received_packets.remove(buffer.u16_be()?)?._2)
+        _pubcomp(_received_packets.remove(
+          buffer.u16_be()?)?._2)
       | 0x7 => // PUBCOMP
         if buffer.peek_u8(0)? != 0x70 then error end
         if buffer.size() != 4 then error end
         buffer.skip(2)?
-        _client.on_publish(this, _confirmed_packets.remove(buffer.u16_be()?)?._2)
+        _client.on_publish(this, _confirmed_packets.remove(
+          buffer.u16_be()?)?._2)
       | 0x9 => // SUBACK
         if buffer.peek_u8(0)? != 0x90 then error end
         if buffer.size() != 5 then error end
@@ -264,16 +279,17 @@ actor MQTTConnection
           _client.on_subscribe(this, topic, buffer.u8()? and 0x03)
         else
           let output_err = recover String(topic.size() + 40) end
-          output_err.>append("[SUBACK] Could not subscribe to topic '")
-            .>append(topic)
-            .>append("'")
+          output_err .> append("[SUBACK] Could not subscribe to topic '")
+            .> append(topic)
+            .> append("'")
           _client.on_error(this, consume output_err)
         end
       | 0xB => // UNSUBACK
         if buffer.peek_u8(0)? != 0xB0 then error end
         if buffer.size() != 4 then error end
         buffer.skip(2)?
-        _client.on_unsubscribe(this, _unsub_topics.remove(buffer.u16_be()?)?._2)
+        _client.on_unsubscribe(this, _unsub_topics.remove(
+          buffer.u16_be()?)?._2)
       | 0xD => // PINGRESP
         if buffer.peek_u8(0)? != 0xD0 then error end
         if buffer.size() != 2 then error end
@@ -283,26 +299,28 @@ actor MQTTConnection
           let control_code = buffer.peek_u8(0)?
           let control_code_string = _unimplemented(control_code)?
           let output_err = recover String(control_code_string.size() + 48) end
-          output_err.>append("[")
-            .>append(control_code_string)
-            .>append("] Unexpected control code; disconnecting")
+          output_err .> append("[")
+            .> append(control_code_string)
+            .> append("] Unexpected control code; disconnecting")
           _client.on_error(this, consume output_err)
           _disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
-          let control_code_string = recover String.from_array([
-            '0' + (control_code >> 4); '0' + (control_code and 0xF)
-          ]) end
+          let control_code_string =
+            recover String.from_array([
+              '0' + (control_code >> 4); '0' + (control_code and 0xF)
+            ]) end
           let output_err = recover String(27) end
-          output_err.>append("[0x")
-            .>append(consume control_code_string)
-            .>append("] Unknown control code; disconnecting")
+          output_err .> append("[0x")
+            .> append(consume control_code_string)
+            .> append("] Unknown control code; disconnecting")
           _client.on_error(this, consume output_err)
           _disconnect(true)
         end
       end
     else
-      _client.on_error(this, "Unexpected format when processing packet; disconnecting")
+      _client.on_error(this,
+        "Unexpected format when processing packet; disconnecting")
       _disconnect(true)
     end
 
@@ -523,12 +541,16 @@ actor MQTTConnection
     buffer.u16_be(packet.topic.size().u16())
     buffer.write(packet.topic)
     if packet.qos != 0 then
-      let id' = if packet.id == 0 then
-        _packet_id = _packet_id + 1
-        _packet_id
-      else packet.id end
+      let id' =
+        if packet.id == 0 then
+          _packet_id = _packet_id + 1
+          _packet_id
+        else
+          packet.id
+        end
       buffer.u16_be(id')
-      _sent_packets.update(id', MQTTPacket(packet.topic, packet.message, packet.retain, packet.qos, id'))
+      _sent_packets.update(id', MQTTPacket(
+        packet.topic, packet.message, packet.retain, packet.qos, id'))
     end
     // -- Payload --
     buffer.write(packet.message)
@@ -538,8 +560,7 @@ actor MQTTConnection
       0x30 or
       (if (_sent_packets.contains(packet.id)) then 0x08 else 0x00 end) or
       (packet.qos << 1) or
-      (if packet.retain then 0x01 else 0x00 end)
-    )
+      (if packet.retain then 0x01 else 0x00 end))
     msg_buffer.write(_remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     try
@@ -655,6 +676,8 @@ actor MQTTConnection
     Strips the connection-specific control ID when requested by the user.
     """
     _publish(MQTTPacket(
-      packet.topic, packet.message, packet.retain, packet.qos,
-      if _sent_packets.contains(packet.id) then 0 else packet.id end
-    ))
+      packet.topic,
+      packet.message,
+      packet.retain,
+      packet.qos,
+      if _sent_packets.contains(packet.id) then 0 else packet.id end))

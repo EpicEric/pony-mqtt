@@ -12,9 +12,9 @@ actor Main
       MQTTConnection(
         env.root as AmbientAuth,
         MQTTHomieDeviceNotify(env, id),
-        "localhost", "1883"
+        "localhost",
+        "1883"
         where client_id' = id,
         will_packet' = will,
-        retry_connection' = true
-      )
+        retry_connection' = true)
     end

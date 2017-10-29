@@ -48,7 +48,8 @@ void pony_network_address(char *ip, char *mac) {
 			                host, NI_MAXHOST,
 			                NULL, 0, NI_NUMERICHOST);
 			if (s == 0) {
-				if (memcmp(ifa->ifa_name, "lo", 2) != 0 && memcmp(ifa->ifa_name, "docker", 6) != 0) {
+				if (memcmp(ifa->ifa_name, "lo", 2) != 0 &&
+				    memcmp(ifa->ifa_name, "docker", 6) != 0) {
 					sprintf(path, "/sys/class/net/%s/address", ifa->ifa_name);
 					strcpy(ip, host);
 					break;

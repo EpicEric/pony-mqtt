@@ -15,12 +15,14 @@ primitive MQTTTopic
 
   fun tag validate_subscribe(topic: String): Bool =>
     """
-    Valid SUBSCRIBE/UNSUBSCRIBE topics may include isolated '#' or '+' between forward dashes.
+    Valid SUBSCRIBE/UNSUBSCRIBE topics may include isolated '#' or '+'
+    between forward dashes.
     """
     if (topic.size() < 1) or (topic.size() > 65535) then return false end
     if topic.contains(String.from_array([0x00])) then return false end
     try
-      let r = Regex("^(#|\\/?(([^#\\/\\+]+|\\+)?(\\/([^#\\/\\+]+|\\+))*(\\/#?)?))$")?
+      let r = 
+        Regex("^(#|\\/?(([^#\\/\\+]+|\\+)?(\\/([^#\\/\\+]+|\\+))*(\\/#?)?))$")?
       r == topic
     else
       false

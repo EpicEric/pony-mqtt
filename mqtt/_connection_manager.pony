@@ -2,7 +2,8 @@ use "net"
 
 class _MQTTConnectionManager is TCPConnectionNotify
   """
-  A TCPConnectionNotify class that manages and redirects all messages to an MQTTConnection actor.
+  A TCPConnectionNotify class that manages and redirects all messages
+  to an MQTTConnection actor.
   """
   let _connection: MQTTConnection
 
