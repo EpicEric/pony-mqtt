@@ -8,7 +8,7 @@ actor MQTTConnection
   """
   An actor that handles the entire MQTT connection.
 
-  It can receive data through a TCPConnectionNotify, or commands from an
+  It can receive data through an _MQTTConnectionManager, or commands from an
   MQTTConnectionNotify. This allows for all expected capabilities of
   a regular MQTT client.
   """
@@ -41,8 +41,8 @@ actor MQTTConnection
 
   new create(
     auth': TCPConnectionAuth,
-    client': MQTTConnectionNotify iso,
-    host': String = "localhost",
+    notify': MQTTConnectionNotify iso,
+    host': String,
     port': String = "1883",
     keepalive': U16 = 15,
     version': MQTTVersion = MQTTv311,
@@ -55,7 +55,7 @@ actor MQTTConnection
     auth = auth'
     host = host'
     port = port'
-    _client = consume client'
+    _client = consume notify'
     _keepalive = if keepalive' > 5 then keepalive' else 5 end
     _version = version'
     _user =
@@ -115,7 +115,7 @@ actor MQTTConnection
     if _retry_connection and not(_conn is None) then
       _client.on_error(
         this,
-        "[CONNECT] Could not establish a connection; retrying...")
+        "[CONNECT] Could not establish a connection; retrying")
       _new_conn()
     else
       _end_connection()
@@ -129,7 +129,7 @@ actor MQTTConnection
       if _retry_connection then
         _client.on_error(
           this,
-          "Connection closed by remote server; reconnecting...")
+          "Connection closed by remote server; reconnecting")
         _new_conn()
       else
         _end_connection()
@@ -306,10 +306,12 @@ actor MQTTConnection
           _disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
-          let control_code_string =
-            recover String.from_array([
-              '0' + (control_code >> 4); '0' + (control_code and 0xF)
-            ]) end
+          let control_code_string = //TODO: Fix this
+            recover
+              String.from_array(
+                [ '0' + (control_code >> 4)
+                  '0' + (control_code and 0xF)])
+            end
           let output_err = recover String(27) end
           output_err .> append("[0x")
             .> append(consume control_code_string)
@@ -421,10 +423,14 @@ actor MQTTConnection
     // Will
     try
       let will: MQTTPacket = _will_packet as MQTTPacket
-      buffer.u16_be(will.topic.size().u16())
-      buffer.write(will.topic)
-      buffer.u16_be(will.message.size().u16())
-      buffer.write(will.message)
+      if MQTTTopic.validate_publish(will.topic) then
+        buffer.u16_be(will.topic.size().u16())
+        buffer.write(will.topic)
+        buffer.u16_be(will.message.size().u16())
+        buffer.write(will.message)
+      else
+        _client.on_error(this, "Invalid topic for will packet; ignoring")
+      end
     end
     // Auth
     try
@@ -630,7 +636,7 @@ actor MQTTConnection
 
   be _send_ping() =>
     """
-    User-callable ping.
+    Timer-callable ping.
     """
     _ping()
 
