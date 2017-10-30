@@ -53,7 +53,6 @@ actor HomieDevice
     mac.recalc()
     let packet_array: Array[(String, String)] =
       [ (base_topic + "$homie", "2.1.0")
-        (base_topic + "$online", "true")
         (base_topic + "$name", "CPU temperature sensor")
         (base_topic + "$localip", consume ip)
         (base_topic + "$mac", consume mac)
@@ -69,7 +68,8 @@ actor HomieDevice
         (base_topic + "temperature/degrees/$unit", "°C")
         (base_topic + "temperature/degrees/$datatype", "float")
         (base_topic + "temperature/degrees/$name", "Degrees")
-        (base_topic + "temperature/degrees/$format", "20.0:100.0") ]
+        (base_topic + "temperature/degrees/$format", "20.0:100.0")
+        (base_topic + "$online", "true") ]
     for tuple in packet_array.values() do
       _conn.publish(MQTTPacket(tuple._1, tuple._2.array(), true, 1))
     end
