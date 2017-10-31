@@ -1,4 +1,5 @@
 use "mqtt"
+use "time"
 
 class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
   """
@@ -13,6 +14,10 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     _id = id
 
   fun ref on_connect(conn: MQTTConnection ref) =>
+    _env.out.print(
+      "[" +
+      get_date() +
+      "] Connected.")
     try
         (_device as HomieDevice).restart()
     else
@@ -23,4 +28,13 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     try (_device as HomieDevice).message(packet) end
 
   fun ref on_error(conn: MQTTConnection ref, message: String) =>
-    _env.out.print("MqttError: " + message)
+    _env.out.print(
+      "[" +
+      get_date() +
+      "] " +
+      message)
+    try (_device as HomieDevice).stop() end
+
+  fun tag get_date(): String =>
+    let date = Date(Time.seconds())
+    date.format("%Y-%m-%d %H:%M:%S")

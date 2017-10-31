@@ -23,6 +23,7 @@ actor MQTTConnection
   let _will_packet: (MQTTPacket | None)
   let _ping_time: U64
   let _resend_time: U64
+  let _reconnect_time: U64
   let _timers: Timers = Timers
   let _data_buffer: Reader = Reader
   let _unimplemented: Map[U8, String] = _unimplemented.create()
@@ -38,6 +39,7 @@ actor MQTTConnection
   var _packet_id: U16 = 0
   var _ping_timer: (Timer tag | None) = None
   var _resend_timer: (Timer tag | None) = None
+  var _reconnect_timer: (Timer tag | None) = None
 
   new create(
     auth': TCPConnectionAuth,
@@ -64,7 +66,12 @@ actor MQTTConnection
       else None end
     _pass = if _user is None then None else pass' end
     _retry_connection = retry_connection'
-    _will_packet = will_packet'
+    _will_packet =
+      MQTTPacket(
+        will_packet.topic,
+        will_packet.message,
+        will_packet.retain,
+        will_packet.qos))
     _client_id = 
       if client_id'.size() >= 6 then
         client_id'
@@ -73,9 +80,9 @@ actor MQTTConnection
       end
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
+    _reconnect_time = 10_000_000_000
     _update_version(version')
-    let notify: _MQTTConnectionManager iso = _MQTTConnectionManager(this)
-    TCPConnection(auth, consume notify, host, port)
+    TCPConnection(auth, _MQTTConnectionManager(this), host, port)
 
   fun tag _random_string(length: USize = 8): String val =>
     let length': USize =
@@ -108,6 +115,10 @@ actor MQTTConnection
 
   be connected(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     _end_connection(false)
+    try
+      _timers.cancel(_reconnect_timer as Timer tag)
+    end
+    _reconnect_timer = None
     _conn = conn
     _connect()
 
@@ -115,13 +126,16 @@ actor MQTTConnection
     if _retry_connection and not(_conn is None) then
       _client.on_error(
         this,
-        "[CONNECT] Could not establish a connection; retrying")
-      _new_conn()
+        "[CONNECT] Could not establish connection; retrying")
+      let reconnect_timer = Timer(
+        _MQTTReconnectTimer(this), _reconnect_time, _reconnect_time)
+      _reconnect_timer = reconnect_timer
+      _timers(consume reconnect_timer)
     else
       _end_connection()
       _client.on_error(
         this,
-        "[CONNECT] Could not establish a connection")
+        "[CONNECT] Could not establish connection")
     end
 
   be closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
@@ -129,8 +143,11 @@ actor MQTTConnection
       if _retry_connection then
         _client.on_error(
           this,
-          "Connection closed by remote server; reconnecting")
-        _new_conn()
+          "Connection closed by remote server; retrying")
+        let reconnect_timer = Timer(
+          _MQTTReconnectTimer(this), 0, _reconnect_time)
+        _reconnect_timer = reconnect_timer
+        _timers(consume reconnect_timer)
       else
         _end_connection()
         _client.on_error(
@@ -356,7 +373,6 @@ actor MQTTConnection
   be _new_conn(connack_error: U8 = 0) =>
     _end_connection()
     try
-      let connection: MQTTConnection = this
       match connack_error
       | 0 => None
       | 1 =>
@@ -366,12 +382,7 @@ actor MQTTConnection
       | 2 =>
         _client_id = _random_string()
       else error end
-      _conn = TCPConnection(
-        auth,
-        _MQTTConnectionManager(connection),
-        host,
-        port
-      )
+      TCPConnection(auth, _MQTTConnectionManager(this), host, port)
     end
 
   fun ref _connect() =>
@@ -461,12 +472,14 @@ actor MQTTConnection
     end
     _ping_timer = None
     _resend_timer = None
-    _timers.dispose()
 
-  fun ref _disconnect(err: Bool = false) =>
+  fun ref _disconnect(send_will: Bool = false) =>
     if not(_connected) then
       _client.on_error(this, "Cannot disconnect: Already disconnected")
       return
+    end
+    if send_will then
+      _publish(will_packet)
     end
     let buffer = Writer
     buffer.u16_le(0xE0)
@@ -657,11 +670,13 @@ actor MQTTConnection
       end
     end
 
-  be disconnect(err: Bool = false) =>
+  be disconnect(send_will: Bool = false) =>
     """
     Ends the MQTT and TCP connections.
+
+    If send_will is true, the will packet will be sent before disconnecting.
     """
-    _disconnect(err)
+    _disconnect(send_will)
   
   be subscribe(topic: String, qos: U8 = 0) =>
     """

@@ -37,6 +37,16 @@ actor HomieDevice
     _timers(consume timer_data')
     publish_start()
 
+  fun ref _kill_timers() =>
+    try
+      _timers.cancel(_timer_interval as Timer tag)
+    end
+    try
+      _timers.cancel(_timer_data as Timer tag)
+    end
+    _timer_interval = None
+    _timer_data = None
+
   fun tag _make_buffer(size: USize): String iso^ =>
     recover String.from_cpointer(
       @pony_alloc[Pointer[U8]](@pony_ctx[Pointer[None] iso](), size), size
@@ -106,11 +116,15 @@ actor HomieDevice
     """
     None
 
+  be stop() =>
+    """
+    Ends device publishing.
+    """
+    _kill_timers()
+
   be restart() =>
-    try
-      _timers.cancel(_timer_interval as Timer tag)
-    end
-    try
-      _timers.cancel(_timer_data as Timer tag)
-    end
+    """
+    Restart the connection.
+    """
+    _kill_timers()
     _startup()
