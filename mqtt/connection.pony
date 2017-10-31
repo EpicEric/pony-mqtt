@@ -48,7 +48,7 @@ actor MQTTConnection
     port': String = "1883",
     keepalive': U16 = 15,
     version': MQTTVersion = MQTTv311,
-    retry_connection': Bool = false,
+    retry_connection': U64 = 0,
     will_packet': (MQTTPacket | None) = None,
     client_id': String = "",
     user': (String | None) = None,
@@ -65,13 +65,23 @@ actor MQTTConnection
         if (user' as String).size() > 0 then user' else None end
       else None end
     _pass = if _user is None then None else pass' end
-    _retry_connection = retry_connection'
+    if retry_connection' > 0 then
+      _retry_connection = true
+      _reconnect_time = 1_000_000_000 * retry_connection'
+    else
+      _retry_connection = false
+      _reconnect_time = 1_000_000_000 * retry_connection'
+    end
     _will_packet =
-      MQTTPacket(
-        will_packet.topic,
-        will_packet.message,
-        will_packet.retain,
-        will_packet.qos))
+      try
+        MQTTPacket(
+          (will_packet' as MQTTPacket).topic,
+          (will_packet' as MQTTPacket).message,
+          (will_packet' as MQTTPacket).retain,
+          (will_packet' as MQTTPacket).qos)
+      else
+        None
+      end
     _client_id = 
       if client_id'.size() >= 6 then
         client_id'
@@ -80,7 +90,6 @@ actor MQTTConnection
       end
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
-    _reconnect_time = 10_000_000_000
     _update_version(version')
     TCPConnection(auth, _MQTTConnectionManager(this), host, port)
 
@@ -479,14 +488,14 @@ actor MQTTConnection
       return
     end
     if send_will then
-      _publish(will_packet)
+      try _publish(_will_packet as MQTTPacket) end
     end
     let buffer = Writer
     buffer.u16_le(0xE0)
     try
       (_conn as TCPConnection).writev(buffer.done())
       (_conn as TCPConnection).dispose()
-      if not(err) then _end_connection() end
+      _end_connection()
     end
 
   fun ref _subscribe(topic: String, qos: U8 = 0) =>

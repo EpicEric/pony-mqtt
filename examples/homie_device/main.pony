@@ -16,5 +16,5 @@ actor Main
         "1883"
         where client_id' = id,
         will_packet' = will,
-        retry_connection' = true)
+        retry_connection' = 5)
     end
