@@ -12,6 +12,8 @@ actor Main is TestList
     test(_TestTopicPublishInvalid)
     test(_TestTopicSubscribeValid)
     test(_TestTopicSubscribeInvalid)
+    test(_TestTopicMatchValid)
+    test(_TestTopicMatchInvalid)
 
 class _TestTopicPublishValid is UnitTest
   fun name(): String =>
@@ -76,3 +78,32 @@ class _TestTopicSubscribeInvalid is UnitTest
     h.assert_false(MQTTTopic.validate_subscribe("hel+lo"))
     h.assert_false(MQTTTopic.validate_subscribe("good/morning#"))
     h.assert_false(MQTTTopic.validate_subscribe("+happy/halloween"))
+
+class _TestTopicMatchValid is UnitTest
+  fun name(): String =>
+    "mqtt/TopicMatchValid"
+  
+  fun ref apply(h: TestHelper) =>
+    h.assert_true(MQTTTopic.match_topic("pony/lang", "pony/lang"))
+    h.assert_true(MQTTTopic.match_topic("foo/biz/bar", "foo/+/bar"))
+    h.assert_true(MQTTTopic.match_topic("hello/world", "+/world"))
+    h.assert_true(MQTTTopic.match_topic("a/very/long/topic", "#"))
+    h.assert_true(MQTTTopic.match_topic("topic/with/$dollar", "topic/with/+"))
+    h.assert_true(MQTTTopic.match_topic("three/whole/levels", "+/+/#"))
+    h.assert_true(MQTTTopic.match_topic("exactly/two", "+/+"))
+    h.assert_true(MQTTTopic.match_topic("$SYS/some/stuff", "$SYS/#"))
+    h.assert_true(MQTTTopic.match_topic("/finance", "+/+"))
+    h.assert_true(MQTTTopic.match_topic("/finance", "/+"))
+
+class _TestTopicMatchInvalid is UnitTest
+  fun name(): String =>
+    "mqtt/TopicMatchInvalid"
+  
+  fun ref apply(h: TestHelper) =>
+    h.assert_false(MQTTTopic.match_topic("pony/lang", "pony/lang/"))
+    h.assert_false(MQTTTopic.match_topic("pony/lang/", "pony/lang"))
+    h.assert_false(MQTTTopic.match_topic("+/biz/bar", "#"))
+    h.assert_false(MQTTTopic.match_topic("mashed/potatoes", "mashed#"))
+    h.assert_false(MQTTTopic.match_topic("$SYS/some/stuff", "#"))
+    h.assert_false(MQTTTopic.match_topic("two/topics", "+/+/+"))
+    h.assert_false(MQTTTopic.match_topic("/finance", "+"))
