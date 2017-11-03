@@ -29,3 +29,7 @@ Pony MQTT is in alpha version. Revisions are greatly appreciated, since this lib
 * `stable fetch` to fetch your dependencies
 * `use "mqtt"` to include this package
 * `stable env ponyc` to compile your application
+
+## Usage
+
+Please refer to the [official documentation](https://epiceric.gitbooks.io/pony-mqtt/) hosted on GitBook.
