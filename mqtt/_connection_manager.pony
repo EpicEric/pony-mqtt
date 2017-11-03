@@ -11,15 +11,15 @@ class _MQTTConnectionManager is TCPConnectionNotify
     _connection = connection
 
   fun ref connected(conn: TCPConnection ref) =>
-    _connection.connected(conn, this)
+    _connection._connected(conn, this)
 
   fun ref connect_failed(conn: TCPConnection ref) =>
-     _connection.connect_failed(conn, this)
+     _connection._connect_failed(conn, this)
 
   fun ref closed(conn: TCPConnection ref) =>
-    _connection.closed(conn, this)
+    _connection._closed(conn, this)
 
   fun ref received(conn: TCPConnection ref, data: Array[U8] iso,
     times: USize): Bool =>
-    _connection.received(conn, this, consume data)
+    _connection._received(conn, this, consume data)
     false

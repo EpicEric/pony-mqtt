@@ -34,7 +34,7 @@ actor MQTTConnection
   let _unsub_topics: Map[U16, String] = _unsub_topics.create()
   var _version: MQTTVersion
   var _client_id: String
-  var _connected: Bool = false
+  var _is_connected: Bool = false
   var _conn: (TCPConnection | None) = None
   var _packet_id: U16 = 0
   var _ping_timer: (Timer tag | None) = None
@@ -95,7 +95,7 @@ actor MQTTConnection
 
   fun tag _random_string(length: USize = 8): String val =>
     let length': USize =
-      if (length < 1) or (length > 23) then
+      if (length == 0) or (length >= 24) then
         8
       else length end
     var string = recover String(length') end
@@ -122,7 +122,7 @@ actor MQTTConnection
     until length == 0 end
     buffer
 
-  be connected(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
+  be _connected(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     _end_connection(false)
     try
       _timers.cancel(_reconnect_timer as Timer tag)
@@ -131,8 +131,8 @@ actor MQTTConnection
     _conn = conn
     _connect()
 
-  be connect_failed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
-    if _retry_connection and not(_conn is None) then
+  be _connect_failed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
+    if _is_connected and _retry_connection then
       _client.on_error(
         this,
         "[CONNECT] Could not establish connection; retrying")
@@ -147,8 +147,8 @@ actor MQTTConnection
         "[CONNECT] Could not establish connection")
     end
 
-  be closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
-    if _connected then
+  be _closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
+    if _is_connected then
       if _retry_connection then
         _client.on_error(
           this,
@@ -168,7 +168,7 @@ actor MQTTConnection
       _client.on_disconnect(this)
     end
 
-  be received(
+  be _received(
     conn: TCPConnection,
     notify: TCPConnectionNotify tag,
     data: Array[U8] iso)
@@ -216,14 +216,14 @@ actor MQTTConnection
     let buffer = Reader
     buffer.append(data)
     try
-      if not(_connected) and (buffer.peek_u8(0)? != 0x20) then return end
+      if not(_is_connected) and (buffer.peek_u8(0)? != 0x20) then return end
       match buffer.peek_u8(0)? >> 4
       | 0x2 => // CONNACK
         if buffer.peek_u8(0)? != 0x20 then error end
         if buffer.size() != 4 then error end
         match buffer.peek_u8(3)? // Return code
         | 0 =>
-          _connected = true
+          _is_connected = true
           // Create a package resender timer and a keepalive timer
           _clean_timers()
           let resend_timer = Timer(
@@ -237,13 +237,22 @@ actor MQTTConnection
           _client.on_connect(this)
         | 1 =>
           _client.on_error(this, "[CONNACK] Unnacceptable protocol version")
-          if _retry_connection then _new_conn(1) end
+          if _retry_connection then
+            match _version
+            | MQTTv311 =>
+              _update_version(MQTTv31)
+              _new_conn()
+            end
+          end
         | 2 =>
           _client.on_error(this, "[CONNACK] Connection ID rejected")
-          if _retry_connection then _new_conn(2) end
+          if _retry_connection then
+            _client_id = _random_string()
+            _new_conn()
+          end
         | 3 =>
           _client.on_error(this, "[CONNACK] Server unavailable")
-          if _retry_connection then _new_conn(3) end
+          if _retry_connection then _new_conn() end
         | 4 =>
           _client.on_error(this, "[CONNACK] Bad user name or password")
         | 5 =>
@@ -356,7 +365,7 @@ actor MQTTConnection
     """
     Clears data when the connection is ended.
     """
-    _connected = false
+    _is_connected = false
     if clear_conn then
       try (_conn as TCPConnection).dispose() end
       _conn = None
@@ -379,27 +388,16 @@ actor MQTTConnection
     _unimplemented.update(0xC0, "PINGREQ")
     _unimplemented.update(0xE0, "DISCONNECT")
 
-  be _new_conn(connack_error: U8 = 0) =>
+  be _new_conn() =>
     _end_connection()
-    try
-      match connack_error
-      | 0 => None
-      | 1 =>
-        match _version
-        | MQTTv311 => _update_version(MQTTv31)
-        else error end
-      | 2 =>
-        _client_id = _random_string()
-      else error end
-      TCPConnection(auth, _MQTTConnectionManager(this), host, port)
-    end
+    TCPConnection(auth, _MQTTConnectionManager(this), host, port)
 
   fun ref _connect() =>
     """
     Sends a CONNECTION control packet to the server after establishing
     a TCP connection.
     """
-    if _connected then
+    if _is_connected then
       _client.on_error(this, "Cannot connect: Already connected")
       return
     end
@@ -483,7 +481,7 @@ actor MQTTConnection
     _resend_timer = None
 
   fun ref _disconnect(send_will: Bool = false) =>
-    if not(_connected) then
+    if not(_is_connected) then
       _client.on_error(this, "Cannot disconnect: Already disconnected")
       return
     end
@@ -507,7 +505,7 @@ actor MQTTConnection
       _client.on_error(this, "Cannot subscribe: Invalid QoS")
       return
     end
-    if not(_connected) then
+    if not(_is_connected) then
       _client.on_error(this, "Cannot subscribe: Not connected")
       return
     end
@@ -534,7 +532,7 @@ actor MQTTConnection
       _client.on_error(this, "Cannot unsubscribe: Invalid topic")
       return
     end
-    if not(_connected) then
+    if not(_is_connected) then
       _client.on_error(this, "Cannot unsubscribe: Not connected")
       return
     end
@@ -560,7 +558,7 @@ actor MQTTConnection
       _client.on_error(this, "Cannot publish: Invalid topic")
       return
     end
-    if not(_connected) then
+    if not(_is_connected) then
       _client.on_error(this, "Cannot publish: Not connected")
       return
     end
@@ -646,7 +644,7 @@ actor MQTTConnection
     """
     Pings the server in order to keep the connection alive.
     """
-    if not(_connected) then
+    if not(_is_connected) then
       _client.on_error(this, "Cannot ping: Not connected")
       return
     end
@@ -667,7 +665,7 @@ actor MQTTConnection
     Handles any unconfirmed QoS 1 or 2 publish packets by
     redoing its action.
     """
-    if _connected then
+    if _is_connected then
       for packet in _sent_packets.values() do
         _publish(packet)
       end
