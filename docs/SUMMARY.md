@@ -8,6 +8,7 @@
     * [class MQTTPacket](classes/class-mqttpacket.md)
     * [type MQTTVersion](classes/type-mqttversion.md)
     * [primitive MQTTTopic](classes/primitive-mqtttopic.md)
+    * [primitive MQTTUtils](classes/primitive-mqttutils.md)
   * Private classes
     * [class \_MQTTConnectionManager](classes/class-mqttconnectionmanager.md)
     * [class \_MQTTPingTimer](classes/class-mqttpingtimer.md)

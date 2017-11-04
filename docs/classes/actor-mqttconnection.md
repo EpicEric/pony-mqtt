@@ -144,10 +144,3 @@ When the connection has been established, but is lost later, this actor can rest
 #### Timers
 
 There are a total of three timers used in the MQTTConnection actor. Two of them, [\_MQTTPingTimer](//classes/class-mqttpingtimer.md) and [\_MQTTResendTimer](//classes/class-mqttresendtimer.md), handle message-passing once a connection has been established. The other one, [\_MQTTReconnectTimer](/classes/class-mqttreconnecttimer.md), is only called in cases listed in the section above, where a connection should be retried every few seconds.
-
-#### Private methods
-
-Two auxiliary private methods are used throughout the actor to aid in repetitive tasks. They are:
-
-* `_random_string(length: USize = 8)`: Generates a random hexadecimal string of the specified length.
-* `_remaining_length(length': USize)`: Generates an array of bytes in the [format specified by the MQTT protocol](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023) for the "Remaining Length" field.

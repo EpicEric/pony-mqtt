@@ -1,7 +1,6 @@
 use "buffered"
 use "collections"
 use "net"
-use "random"
 use "time"
 
 actor MQTTConnection
@@ -86,41 +85,12 @@ actor MQTTConnection
       if client_id'.size() >= 6 then
         client_id'
       else
-        _random_string() 
+        MQTTUtils.random_string() 
       end
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
     TCPConnection(auth, _MQTTConnectionManager(this), host, port)
-
-  fun tag _random_string(length: USize = 8): String val =>
-    let length': USize =
-      if (length == 0) or (length >= 24) then
-        8
-      else length end
-    var string = recover String(length') end
-    let rand: Rand = Rand(Time.nanos()) .> next()
-    let letters: String = "0123456789abcdef"
-    for n in Range[USize](0, length') do
-      let char = rand.int(letters.size().u64()).usize()
-      string.push(try letters(char)? else '0' end)
-    end
-    string
-
-  fun tag _remaining_length(length': USize): Array[U8] val =>
-    let buffer = recover Array[U8] end
-    var length = length'
-    repeat
-      let byte: U8 =
-        if length >= 128 then
-          (length.u8() and 0x7F) or 0x80
-        else
-          (length.u8() and 0x7F)
-        end
-      length = length >> 7
-      buffer.push(byte)
-    until length == 0 end
-    buffer
 
   be _connected(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     _end_connection(false)
@@ -247,7 +217,7 @@ actor MQTTConnection
         | 2 =>
           _client.on_error(this, "[CONNACK] Connection ID rejected")
           if _retry_connection then
-            _client_id = _random_string()
+            _client_id = MQTTUtils.random_string()
             _new_conn()
           end
         | 3 =>
@@ -464,7 +434,7 @@ actor MQTTConnection
     // -- Fixed header --
     let msg_buffer = Writer
     msg_buffer.u8(0x10)
-    msg_buffer.write(_remaining_length(buffer.size()))
+    msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     try
       (_conn as TCPConnection).writev(msg_buffer.done())
@@ -520,7 +490,7 @@ actor MQTTConnection
     // -- Fixed header --
     let msg_buffer = Writer
     msg_buffer.u8(0x82)
-    msg_buffer.write(_remaining_length(buffer.size()))
+    msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     _sub_topics.update(_packet_id, topic)
     try
@@ -546,7 +516,7 @@ actor MQTTConnection
     // -- Fixed header --
     let msg_buffer = Writer
     msg_buffer.u8(0xA2)
-    msg_buffer.write(_remaining_length(buffer.size()))
+    msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     _unsub_topics.update(_packet_id, topic)
     try
@@ -587,7 +557,7 @@ actor MQTTConnection
       (if (_sent_packets.contains(packet.id)) then 0x08 else 0x00 end) or
       (packet.qos << 1) or
       (if packet.retain then 0x01 else 0x00 end))
-    msg_buffer.write(_remaining_length(buffer.size()))
+    msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     try
       (_conn as TCPConnection).writev(msg_buffer.done())
