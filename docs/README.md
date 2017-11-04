@@ -9,4 +9,3 @@ The Pony-MQTT project is entirely maintained [on GitHub](https://github.com/Epic
 ---
 
 This documentation focuses on usage rather than development of the library, and covers the basic features of the system, as well as class/method documentation and examples. Private methods and classes will be mentioned briefly and without technicality.
-

@@ -32,4 +32,3 @@ script:
   - make -C examples/hello_world
   - make -C examples/subscribe
   - make -C examples/homie_device
-

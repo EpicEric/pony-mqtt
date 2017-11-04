@@ -17,4 +17,3 @@
   * [Getting started](usage/getting-started.md)
   * [Errors](usage/errors.md)
   * [Examples](usage/examples.md)
-

@@ -151,6 +151,3 @@ Two auxiliary private methods are used throughout the actor to aid in repetitive
 
 * `_random_string(length: USize = 8)`: Generates a random hexadecimal string of the specified length.
 * `_remaining_length(length': USize)`: Generates an array of bytes in the [format specified by the MQTT protocol](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023) for the "Remaining Length" field.
-
-
-

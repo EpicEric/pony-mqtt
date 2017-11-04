@@ -44,4 +44,3 @@ new val create(
 ```
 
 Creates a packet.
-

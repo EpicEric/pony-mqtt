@@ -33,6 +33,3 @@ actor Main
 ```
 
 * `stable env ponyc` to compile your application.
-
-
-

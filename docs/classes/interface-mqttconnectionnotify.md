@@ -78,6 +78,3 @@ Some errors may result in the connection to the server being closed afterwards. 
 * Connection closed by the server.
 * Incorrect connection settings.
 * Unexpected package format from the server.
-
-
-

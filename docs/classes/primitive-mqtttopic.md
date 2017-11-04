@@ -19,4 +19,3 @@ fun tag validate_subscribe(topic: String): Bool =>
 ```
 
 Receives a string and verifies if it has no null characters and the wildcard characters are properly segmented. Returns `true` if the topic is valid and `false` otherwise.
-
