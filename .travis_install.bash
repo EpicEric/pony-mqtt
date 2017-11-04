@@ -31,6 +31,15 @@ install-ponyc-master(){
   popd
 }
 
+install-pony-stable(){
+  echo "Installing pony-stable..."
+  git clone https://github.com/ponylang/pony-stable.git
+  pushd pony-stable
+  echo "Building pony-stable..."
+  sudo make install
+  popd
+}
+
 echo "Installing ponyc build dependencies..."
 if [ "${TRAVIS_EVENT_TYPE}" = "cron" ]
 then
@@ -39,6 +48,7 @@ then
   download_llvm
   download_pcre
   install-ponyc-master
+  install-pony-stable
   popd
 else
   echo "Installing ponyc runtime dependencies..."
@@ -46,6 +56,7 @@ else
   echo -e "\033[0;32mInstalling latest ponyc release\033[0m"
   sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys "D401AB61 DBE1D0A2"
   echo "deb https://dl.bintray.com/pony-language/ponyc-debian pony-language main" | sudo tee -a /etc/apt/sources.list
+  echo "deb https://dl.bintray.com/pony-language/pony-stable-debian /" | sudo tee -a /etc/apt/sources.list
   sudo apt-get update
-  sudo apt-get -V install ponyc
+  sudo apt-get -V install ponyc pony-stable
 fi
