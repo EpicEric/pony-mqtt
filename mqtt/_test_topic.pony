@@ -1,9 +1,6 @@
 use "ponytest"
 
 actor _TestTopic is TestList
-  new make() =>
-    None
-
   fun tag tests(test: PonyTest) =>
     test(_TestTopicPublishValid)
     test(_TestTopicPublishInvalid)
