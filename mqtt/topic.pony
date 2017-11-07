@@ -21,8 +21,7 @@ primitive MQTTTopic
     if (topic.size() < 1) or (topic.size() > 65535) then return false end
     if topic.contains(String.from_array([0x00])) then return false end
     try
-      let r = 
-        Regex("^(#|(([^#\\/\\+]*|\\+)?(\\/([^#\\/\\+]*|\\+))*(\\/#)?))$")?
+      let r = Regex("^(([^#\\/+]*|\\+)\\/)*([^#\\/+]*|\\+|#)$")?
       r == topic
     else
       false
