@@ -22,7 +22,7 @@ primitive MQTTTopic
     if topic.contains(String.from_array([0x00])) then return false end
     try
       let r = 
-        Regex("^(#|\\/?(([^#\\/\\+]+|\\+)?(\\/([^#\\/\\+]+|\\+))*(\\/#?)?))$")?
+        Regex("^(#|(([^#\\/\\+]*|\\+)?(\\/([^#\\/\\+]*|\\+))*(\\/#)?))$")?
       r == topic
     else
       false

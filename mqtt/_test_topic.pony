@@ -24,6 +24,7 @@ class _TestTopicPublishValid is UnitTest
     h.assert_true(MQTTTopic.validate_publish("weird/"))
     h.assert_true(MQTTTopic.validate_publish("foo/biz/bar"))
     h.assert_true(MQTTTopic.validate_publish("$SYS/version"))
+    h.assert_true(MQTTTopic.validate_publish("///"))
 
 class _TestTopicPublishInvalid is UnitTest
   fun name(): String =>
@@ -59,6 +60,7 @@ class _TestTopicSubscribeValid is UnitTest
     h.assert_true(MQTTTopic.validate_subscribe("/#"))
     h.assert_true(MQTTTopic.validate_subscribe("/+"))
     h.assert_true(MQTTTopic.validate_subscribe("+/+/tennis/#"))
+    h.assert_true(MQTTTopic.validate_subscribe("///"))
 
 class _TestTopicSubscribeInvalid is UnitTest
   fun name(): String =>
