@@ -1,7 +1,7 @@
 {
   "deps": [
     {
-      "type": "local-git",
+      "type": "local",
       "local-path": "../../../pony-mqtt"
     }
   ]

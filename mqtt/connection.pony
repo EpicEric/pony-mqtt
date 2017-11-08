@@ -29,7 +29,7 @@ actor MQTTConnection
   let _sent_packets: Map[U16, MQTTPacket] = _sent_packets.create()
   let _received_packets: Map[U16, MQTTPacket] = _received_packets.create()
   let _confirmed_packets: Map[U16, MQTTPacket] = _confirmed_packets.create()
-  let _sub_topics: Map[U16, String] = _sub_topics.create()
+  let _sub_topics: Map[U16, (String, U8)] = _sub_topics.create()
   let _unsub_topics: Map[U16, String] = _unsub_topics.create()
   var _version: MQTTVersion
   var _client_id: String
@@ -279,7 +279,7 @@ actor MQTTConnection
         if buffer.peek_u8(0)? != 0x90 then error end
         if buffer.size() != 5 then error end
         buffer.skip(2)?
-        let topic = _sub_topics.remove(buffer.u16_be()?)?._2
+        let topic = _sub_topics.remove(buffer.u16_be()?)?._2._1
         if (buffer.peek_u8(0)? and 0x80) == 0x00 then
           _client.on_subscribe(this, topic, buffer.u8()? and 0x03)
         else
@@ -466,7 +466,7 @@ actor MQTTConnection
       _end_connection()
     end
 
-  fun ref _subscribe(topic: String, qos: U8 = 0) =>
+  fun ref _subscribe(topic: String, qos: U8 = 0, id: U16 = 0) =>
     if not(MQTTTopic.validate_subscribe(topic)) then
       _client.on_error(this, "Cannot subscribe: Invalid topic")
       return
@@ -481,8 +481,12 @@ actor MQTTConnection
     end
     let buffer = Writer
     // -- Variable header --
-    _packet_id = _packet_id + 1
-    buffer.u16_be(_packet_id)
+    if id == 0 then
+      _packet_id = _packet_id + 1
+      buffer.u16_be(_packet_id)
+    else
+      buffer.u16_be(id)
+    end
     // -- Payload --
     buffer.u16_be(topic.size().u16())
     buffer.write(topic)
@@ -492,12 +496,12 @@ actor MQTTConnection
     msg_buffer.u8(0x82)
     msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
-    _sub_topics.update(_packet_id, topic)
+    _sub_topics.update(if id == 0 then _packet_id else id end, (topic, qos))
     try
       (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
-  fun ref _unsubscribe(topic: String) =>
+  fun ref _unsubscribe(topic: String, id: U16 = 0) =>
     if not(MQTTTopic.validate_subscribe(topic)) then
       _client.on_error(this, "Cannot unsubscribe: Invalid topic")
       return
@@ -508,8 +512,12 @@ actor MQTTConnection
     end
     let buffer = Writer
     // -- Variable header --
-    _packet_id = _packet_id + 1
-    buffer.u16_be(_packet_id)
+    if id == 0 then
+      _packet_id = _packet_id + 1
+      buffer.u16_be(_packet_id)
+    else
+      buffer.u16_be(id)
+    end
     // -- Payload --
     buffer.u16_be(topic.size().u16())
     buffer.write(topic)
@@ -518,7 +526,7 @@ actor MQTTConnection
     msg_buffer.u8(0xA2)
     msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
-    _unsub_topics.update(_packet_id, topic)
+    _unsub_topics.update(if id == 0 then _packet_id else id end, topic)
     try
       (_conn as TCPConnection).writev(msg_buffer.done())
     end
@@ -644,6 +652,12 @@ actor MQTTConnection
       end
       for packet in _confirmed_packets.values() do
         _pubcomp(packet)
+      end
+      for (id, topic_tuple) in _sub_topics.pairs() do
+        _subscribe(topic_tuple._1, topic_tuple._2, id)
+      end
+      for (id, topic) in _unsub_topics.pairs() do
+        _unsubscribe(topic, id)
       end
     end
 
