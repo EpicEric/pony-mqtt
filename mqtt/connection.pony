@@ -171,14 +171,13 @@ actor MQTTConnection
           end
           _parse_packet(consume packet_data)
         else
-          try 
-            buffer.write(_data_buffer.block(_data_buffer.size())?)
-            for chunk in buffer.done().values() do
-              _data_buffer.append(chunk)
-            end
-          end
-          break
+          error
         end
+      end
+    else
+      try buffer.write(_data_buffer.block(_data_buffer.size())?) end
+      for chunk in buffer.done().values() do
+        _data_buffer.append(chunk)
       end
     end
 
