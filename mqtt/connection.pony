@@ -154,10 +154,13 @@ actor MQTTConnection
       while _data_buffer.size() > 0 do
         buffer.u8(_data_buffer.u8()?)
         var remaining_length: USize = 0
+        var shift_amount: USize = 0
         var temp: U8 = 0x80
         repeat
           temp = _data_buffer.u8()?
-          remaining_length = (remaining_length << 7) + temp.usize()
+          remaining_length =
+            remaining_length + ((temp and 0x7F).usize() << shift_amount)
+          shift_amount = shift_amount + 7
           buffer.u8(temp)
         until (temp and 0x80) == 0x0 end
         if remaining_length <= _data_buffer.size() then

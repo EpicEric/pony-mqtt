@@ -31,7 +31,7 @@ class iso MQTTSubNotify is MQTTConnectionNotify
     """
     _env.out.print("> Subscribed to topic '" + topic + "'.")
 
-  fun ref on_unsubcribe(conn: MQTTConnection ref, topic: String) =>
+  fun ref on_unsubscribe(conn: MQTTConnection ref, topic: String) =>
     None
 
   fun ref on_ping(conn: MQTTConnection ref) =>
