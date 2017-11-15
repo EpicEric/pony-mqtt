@@ -1,5 +1,3 @@
-use "regex"
-
 primitive MQTTTopic
   """
   An utility to validate topics upon publishing or subscribing.
@@ -21,8 +19,18 @@ primitive MQTTTopic
     if (topic.size() < 1) or (topic.size() > 65535) then return false end
     if topic.contains(String.from_array([0x00])) then return false end
     try
-      let r = Regex("^(([^#\\/+]*|\\+)\\/)*([^#\\/+]*|\\+|#)$")?
-      r == topic
+      let array: Array[String] val = topic.split_by("/")
+      for i in array.keys() do
+        let string: String = array(i)?
+        if (string == "#") then
+          return i == (array.size() - 1)
+        elseif (string != "+") then
+          if string.contains("+") or string.contains("#") then
+            return false
+          end
+        end
+      end
+      true
     else
       false
     end
