@@ -313,11 +313,13 @@ actor MQTTConnection
           _disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
-          let control_code_string = //TODO: Fix this
+          let control_code_string =
             recover
+              let msb = control_code >> 4
+              let lsb = control_code and 0xF
               String.from_array(
-                [ '0' + (control_code >> 4)
-                  '0' + (control_code and 0xF)])
+                [ '0' + msb + if msb > 0x9 then 7 else 0 end
+                  '0' + lsb + if lsb > 0x9 then 7 else 0 end])
             end
           let output_err = recover String(27) end
           output_err .> append("[0x")
