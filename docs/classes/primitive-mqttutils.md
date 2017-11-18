@@ -1,6 +1,8 @@
 # primitive MQTTUtils
 
-Provides functions used throughout [MQTTConnection](//classes/actor-mqttconnection.md) that might be useful for users or tests.
+Provides functions used throughout
+[MQTTConnection](//classes/actor-mqttconnection.md)
+that might be useful for users or tests.
 
 ## Public methods
 
@@ -12,7 +14,8 @@ fun tag random_string(
   letters: String = "0123456789abcdef"): String val =>
 ```
 
-Receives an integer and a string, and generates a random string of the specified length with the provided characters.
+Receives an integer and a string, and generates a random string of the
+specified length with the provided characters.
 
 #### remaining\_length
 
@@ -20,4 +23,6 @@ Receives an integer and a string, and generates a random string of the specified
 fun tag remaining_length(length': USize): Array[U8] val =>
 ```
 
-Receives an integer, and generates an array of bytes in the [format specified by the MQTT protocol](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023) for the "Remaining Length" field.
+Receives an integer, and generates an array of bytes in the
+[format specified by the MQTT protocol](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023)
+for the "Remaining Length" field.

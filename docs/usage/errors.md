@@ -1,6 +1,9 @@
 # Errors
 
-There is a [notify](//classes/interface-mqttconnectionnotify.md) function, `on_error(conn: MQTTConnection ref, message: String)`, that receives a string to represent a raised error. You may choose to handle or ignore them.
+There is a
+[notify](//classes/interface-mqttconnectionnotify.md)
+function, `on_error(conn: MQTTConnection ref, message: String)`, that receives
+a string to represent a raised error. You may choose to handle or ignore them.
 
 It may be one of the following:
 
@@ -30,9 +33,11 @@ It may be one of the following:
 
 * When connecting:
 
-  * `[CONNECT] Could not establish a connection; retrying` \(if `retry_connection` is greater than zero\)
+  * `[CONNECT] Could not establish a connection; retrying` \(if
+  `retry_connection` is greater than zero\)
 
-  * `[CONNECT] Could not establish a connection` \(if `retry_connection` is zero\)
+  * `[CONNECT] Could not establish a connection` \(if `retry_connection`
+  is zero\)
 
   * `Cannot connect: Already connected`
 
@@ -42,17 +47,21 @@ It may be one of the following:
 
 * On unexpected disconnect:
 
-  * `Connection closed by remote server; reconnecting` \(if `retry_connection` is greater than zero\)
+  * `Connection closed by remote server; reconnecting` \(if `retry_connection`
+  is greater than zero\)
 
   * `Connection closed by remote server` \(if `retry_connection` is zero\)
 
 * When parsing packets:
 
-  * `[CONNACK] Unnacceptable protocol version` \(retries if `retry_connection` is greater than zero\)
+  * `[CONNACK] Unnacceptable protocol version` \(retries if `retry_connection`
+  is greater than zero\)
 
-  * `[CONNACK] Connection ID rejected` \(retries if `retry_connection` is greater than zero\)
+  * `[CONNACK] Connection ID rejected` \(retries if `retry_connection` is
+  greater than zero\)
 
-  * `[CONNACK] Server unavailable` \(retries if`retry_connection`is greater than zero\)
+  * `[CONNACK] Server unavailable` \(retries if`retry_connection`is greater
+  than zero\)
 
   * `[CONNACK] Bad user name or password`
 

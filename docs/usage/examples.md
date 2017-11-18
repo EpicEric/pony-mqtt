@@ -1,10 +1,12 @@
 # Examples
 
-These are a few simple examples to help you take a look at what you can do with Pony-MQTT.
+These are a few simple examples to help you take a look at what you can do
+with Pony-MQTT.
 
 ## Hello world
 
-Simply enough, this program connects to an MQTT broker, sends a message and disconnects.
+Simple enough, this program connects to an MQTT broker, sends a message
+and disconnects.
 
 ```pony
 use "mqtt"

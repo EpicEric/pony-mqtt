@@ -1,20 +1,20 @@
 # Summary
 
 * [Introduction](README.md)
-* Classes and actors
-  * Public classes
+* [Classes and actors](classes/README.md)
+  * [Public classes](classes/public-classes.md)
     * [actor MQTTConnection](classes/actor-mqttconnection.md)
     * [interface MQTTConnectionNotify](classes/interface-mqttconnectionnotify.md)
     * [class MQTTPacket](classes/class-mqttpacket.md)
     * [type MQTTVersion](classes/type-mqttversion.md)
     * [primitive MQTTTopic](classes/primitive-mqtttopic.md)
     * [primitive MQTTUtils](classes/primitive-mqttutils.md)
-  * Private classes
+  * [Private classes](classes/private-classes.md)
     * [class \_MQTTConnectionManager](classes/class-mqttconnectionmanager.md)
     * [class \_MQTTPingTimer](classes/class-mqttpingtimer.md)
     * [class \_MQTTResendTimer](classes/class-mqttresendtimer.md)
     * [class \_MQTTReconnectTimer](classes/class-mqttreconnecttimer.md)
-* Usage
+* [Usage](usage/README.md)
   * [Getting started](usage/getting-started.md)
   * [Errors](usage/errors.md)
   * [Examples](usage/examples.md)
