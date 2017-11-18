@@ -18,22 +18,27 @@ primitive MQTTTopic
     """
     if (topic.size() < 1) or (topic.size() > 65535) then return false end
     if topic.contains(String.from_array([0x00])) then return false end
-    try
-      let array: Array[String] val = topic.split_by("/")
-      for i in array.keys() do
-        let string: String = array(i)?
-        if (string == "#") then
-          return i == (array.size() - 1)
-        elseif (string != "+") then
-          if string.contains("+") or string.contains("#") then
-            return false
-          end
-        end
+    var was_slash: Bool = true
+    var was_plus: Bool = false
+    var was_hash: Bool = false
+    for byte in topic.values() do
+      if was_hash or (was_plus and (byte != '/')) then
+        return false
+      elseif byte == '/' then
+        was_slash = true
+        was_plus = false
+      elseif byte == '+' then
+        if not was_slash then return false end
+        was_slash = false
+        was_plus = true
+      elseif byte == '#' then
+        if not was_slash then return false end
+        was_hash = true
+      else
+        was_slash = false
       end
-      true
-    else
-      false
     end
+    true
 
   fun tag match_topic(name: String, filter: String): Bool =>
     """

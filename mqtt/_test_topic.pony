@@ -71,9 +71,12 @@ class _TestTopicSubscribeInvalid is UnitTest
       ['A'; 0x00; 'B'])))
     h.assert_false(MQTTTopic.validate_subscribe("#/"))
     h.assert_false(MQTTTopic.validate_subscribe("#/hi"))
+    h.assert_false(MQTTTopic.validate_subscribe("+hello"))
     h.assert_false(MQTTTopic.validate_subscribe("hel+lo"))
+    h.assert_false(MQTTTopic.validate_subscribe("hello+"))
+    h.assert_false(MQTTTopic.validate_subscribe("good/#morning"))
+    h.assert_false(MQTTTopic.validate_subscribe("good/morn#ing"))
     h.assert_false(MQTTTopic.validate_subscribe("good/morning#"))
-    h.assert_false(MQTTTopic.validate_subscribe("+happy/halloween"))
 
 class _TestTopicMatchValid is UnitTest
   fun name(): String =>
