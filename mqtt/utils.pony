@@ -18,7 +18,7 @@ primitive MQTTUtils
           8
         else length end
       var string = String(length')
-      let rand: Rand = Rand(Time.nanos()) .> next()
+      let rand: Rand = Rand(Time.nanos())
       var n: USize = 0
       while n < length' do
         try
