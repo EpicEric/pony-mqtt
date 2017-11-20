@@ -40,11 +40,12 @@ class iso MQTTSubNotify is MQTTConnectionNotify
   fun ref on_disconnect(conn: MQTTConnection ref) =>
     None
 
-  fun ref on_error(conn: MQTTConnection ref, message: String) =>
+  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String)
+  =>
     """
     Print error.
     """
-    _env.out.print("MqttError: " + message)
+    _env.out.print("MqttError: " + err.string())
 
 actor Main
   new create(env: Env) =>

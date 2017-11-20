@@ -17,6 +17,10 @@ creates
 user can also specify reconnection, making this class dispose of all current
 state and attempt to establish a new connection.
 
+It may raise one of many errors during execution; for more information,
+please refer to
+[MQTTError](//classes/type-mqtterror.md).
+
 ## Public fields
 
 #### auth : TCPConnectionAuth
@@ -32,8 +36,6 @@ The host where the MQTT broker is located, such as `localhost`,
 #### port : String
 
 The port for the MQTT service. By default, most brokers use port `1883`.
-
-## Public methods/behaviours
 
 #### create
 
@@ -83,10 +85,11 @@ A value of zero means no reattempt will be made. Default is `0`.
 
 * `will_packet'`: MQTT allows the client to send a
 [will message](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Will_Flag)
-when the connection with the server is unexpectedly lost. If this field is
-not `None`, then the specified package will be sent unless the client
-gracefully disconnects with the `disconnect()` behaviour without providing
-the will parameter.
+when the connection with the server is unexpectedly lost. If this field is an
+[MQTTPacket](//classes/class-mqttpacket.md)
+with a valid topic, then the specified package will be sent unless the
+client gracefully disconnects with the `disconnect()` behaviour without
+providing the will parameter.
 
 * `client_id'`: A string that will be used as the client ID to the broker
 for this session. By default, it will generate a random string with
@@ -109,10 +112,6 @@ Sends a DISCONNECT request to the broker, and gracefully ends the connection,
 discarding any will packet. If `send_will` is `true`, a publish message with
 the will packet will be sent prior to disconnecting.
 
-It may trigger the following error:
-
-* `Cannot disconnect: Already disconnected`
-
 #### subscribe
 
 ```pony
@@ -121,14 +120,6 @@ be subscribe(topic: String, qos: U8 = 0) =>
 
 Sends a SUBSCRIBE request to the broker for the associated topic.
 
-It may trigger one of the following errors:
-
-* `Cannot subscribe: Invalid topic`
-
-* `Cannot subscribe: Invalid QoS`
-
-* `Cannot subscribe: Not connected`
-
 #### unsubscribe
 
 ```pony
@@ -136,12 +127,6 @@ be unsubscribe(topic: String) =>
 ```
 
 Sends an UNSUBSCRIBE request to the broker from the associated topic.
-
-It may trigger one of the following errors:
-
-* `Cannot unsubscribe: Invalid topic`
-
-* `Cannot unsubscribe: Not connected`
 
 #### publish
 
@@ -152,12 +137,6 @@ be publish(packet: MQTTPacket) =>
 Sends a PUBLISH request for the provided
 [packet message](//classes/class-mqttpacket.md),
 along with desired topic, QoS, and retain flag.
-
-It may trigger one of the following errors:
-
-* `Cannot publish: Invalid topic`
-
-* `Cannot publish: Not connected`
 
 ## Advanced code documentation
 

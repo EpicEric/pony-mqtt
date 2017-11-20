@@ -7,26 +7,28 @@ primitive MQTTUtils
   """
   fun tag random_string(
     length: USize = 8,
-    letters: String = "0123456789abcdef"): String val =>
+    letters: String = "0123456789abcdef"): String iso^ =>
   """
   Generates a random string of the specified length with the
   provided characters.
   """
-    let length': USize =
-      if (length == 0) or (length >= 24) then
-        8
-      else length end
-    var string = recover String(length') end
-    let rand: Rand = Rand(Time.nanos()) .> next()
-    var n: USize = 0
-    while n < length' do
-      try
-        let char = rand.int(letters.size().u64()).usize()
-        string.push(letters(char)?)
+    recover
+      let length': USize =
+        if (length == 0) or (length >= 24) then
+          8
+        else length end
+      var string = String(length')
+      let rand: Rand = Rand(Time.nanos()) .> next()
+      var n: USize = 0
+      while n < length' do
+        try
+          let char = rand.int(letters.size().u64()).usize()
+          string.push(letters(char)?)
+        end
+        n = n + 1
       end
-      n = n + 1
+      string
     end
-    consume string
 
   fun tag remaining_length(length: USize): Array[U8] val =>
   """

@@ -73,11 +73,12 @@ actor MQTTConnection
     end
     _will_packet =
       try
-        MQTTPacket(
-          (will_packet' as MQTTPacket).topic,
-          (will_packet' as MQTTPacket).message,
-          (will_packet' as MQTTPacket).retain,
-          (will_packet' as MQTTPacket).qos)
+        let wp = will_packet' as MQTTPacket
+        if not MQTTTopic.validate_publish(wp.topic) then
+          None
+        else
+          wp
+        end
       else
         None
       end
@@ -103,35 +104,27 @@ actor MQTTConnection
 
   be _connect_failed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     if _is_connected and _retry_connection then
-      _client.on_error(
-        this,
-        "[CONNECT] Could not establish connection; retrying")
+      _client.on_error(this, MQTTErrorConnectFailedRetry)
       let reconnect_timer = Timer(
         _MQTTReconnectTimer(this), _reconnect_time, _reconnect_time)
       _reconnect_timer = reconnect_timer
       _timers(consume reconnect_timer)
     else
       _end_connection()
-      _client.on_error(
-        this,
-        "[CONNECT] Could not establish connection")
+      _client.on_error(this, MQTTErrorConnectFailed)
     end
 
   be _closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
     if _is_connected then
       if _retry_connection then
-        _client.on_error(
-          this,
-          "Connection closed by remote server; retrying")
+        _client.on_error(this, MQTTErrorSocketRetry)
         let reconnect_timer = Timer(
           _MQTTReconnectTimer(this), 0, _reconnect_time)
         _reconnect_timer = reconnect_timer
         _timers(consume reconnect_timer)
       else
         _end_connection()
-        _client.on_error(
-          this,
-          "Connection closed by remote server")
+        _client.on_error(this, MQTTErrorSocket)
       end
     else
       _end_connection()
@@ -208,27 +201,35 @@ actor MQTTConnection
           _timers(consume ping_timer)
           _client.on_connect(this)
         | 1 =>
-          _client.on_error(this, "[CONNACK] Unnacceptable protocol version")
-          if _retry_connection then
+          if _retry_connection and not(_version is MQTTv31) then
+            _client.on_error(this, MQTTErrorConnectProtocolRetry)
             match _version
             | MQTTv311 =>
               _update_version(MQTTv31)
               _new_conn()
             end
+          else
+            _client.on_error(this, MQTTErrorConnectProtocol)
           end
         | 2 =>
-          _client.on_error(this, "[CONNACK] Connection ID rejected")
           if _retry_connection then
+            _client.on_error(this, MQTTErrorConnectIDRetry)
             _client_id = MQTTUtils.random_string()
             _new_conn()
+          else
+            _client.on_error(this, MQTTErrorConnectID)
           end
         | 3 =>
-          _client.on_error(this, "[CONNACK] Server unavailable")
-          if _retry_connection then _new_conn() end
+          if _retry_connection then
+            _client.on_error(this, MQTTErrorConnectServerRetry)
+            _new_conn()
+          else
+            _client.on_error(this, MQTTErrorConnectServer)
+          end
         | 4 =>
-          _client.on_error(this, "[CONNACK] Bad user name or password")
+          _client.on_error(this, MQTTErrorConnectAuthentication)
         | 5 =>
-          _client.on_error(this, "[CONNACK] Unauthorized client")
+          _client.on_error(this, MQTTErrorConnectAuthorization)
         else error end
       | 0x3 => // PUBLISH
         let byte: U8 = buffer.peek_u8(0)?
@@ -285,11 +286,7 @@ actor MQTTConnection
         if (buffer.peek_u8(0)? and 0x80) == 0x00 then
           _client.on_subscribe(this, topic, buffer.u8()? and 0x03)
         else
-          let output_err = recover String(topic.size() + 40) end
-          output_err .> append("[SUBACK] Could not subscribe to topic '")
-            .> append(topic)
-            .> append("'")
-          _client.on_error(this, consume output_err)
+          _client.on_error(this, MQTTErrorSubscribeFailure, topic)
         end
       | 0xB => // UNSUBACK
         if buffer.peek_u8(0)? != 0xB0 then error end
@@ -303,35 +300,25 @@ actor MQTTConnection
         _client.on_ping(this)
       else
         try
-          let control_code = buffer.peek_u8(0)?
-          let control_code_string = _unimplemented(control_code)?
-          let output_err = recover String(control_code_string.size() + 48) end
-          output_err .> append("[")
-            .> append(control_code_string)
-            .> append("] Unexpected control code; disconnecting")
-          _client.on_error(this, consume output_err)
+          _client.on_error(
+            this,
+            MQTTErrorServerCode,
+            _unimplemented(buffer.peek_u8(0)?)?)
           _disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
-          let control_code_string =
-            recover
-              let msb = control_code >> 4
-              let lsb = control_code and 0xF
-              String.from_array(
-                [ '0' + msb + if msb > 0x9 then 7 else 0 end
-                  '0' + lsb + if lsb > 0x9 then 7 else 0 end])
-            end
-          let output_err = recover String(27) end
-          output_err .> append("[0x")
-            .> append(consume control_code_string)
-            .> append("] Unknown control code; disconnecting")
-          _client.on_error(this, consume output_err)
+          _client.on_error(this, MQTTErrorUnknownCode, recover
+            let msb = control_code >> 4
+            let lsb = control_code and 0xF
+            String.from_array(
+              [ '0' + msb + if msb > 0x9 then 7 else 0 end
+                '0' + lsb + if lsb > 0x9 then 7 else 0 end ])
+          end)
           _disconnect(true)
         end
       end
     else
-      _client.on_error(this,
-        "Unexpected format when processing packet; disconnecting")
+      _client.on_error(this, MQTTErrorUnexpectedFormat)
       _disconnect(true)
     end
 
@@ -372,11 +359,11 @@ actor MQTTConnection
     a TCP connection.
     """
     if _is_connected then
-      _client.on_error(this, "Cannot connect: Already connected")
+      _client.on_error(this, MQTTErrorConnectConnected)
       return
     end
     if _conn is None then
-      _client.on_error(this, "Cannot connect: No connection established")
+      _client.on_error(this, MQTTErrorConnectSocket)
       return
     end
     let buffer = Writer
@@ -399,11 +386,11 @@ actor MQTTConnection
         try
           let will: MQTTPacket = _will_packet as MQTTPacket
             if will.retain then
-              0x20
+              0x24
             else
-              0x00
+              0x04
             end or
-              (will.qos << 3) or 0x04
+              (will.qos << 3)
         else 0x00 end
     )
     // Keepalive
@@ -415,14 +402,10 @@ actor MQTTConnection
     // Will
     try
       let will: MQTTPacket = _will_packet as MQTTPacket
-      if MQTTTopic.validate_publish(will.topic) then
-        buffer.u16_be(will.topic.size().u16())
-        buffer.write(will.topic)
-        buffer.u16_be(will.message.size().u16())
-        buffer.write(will.message)
-      else
-        _client.on_error(this, "Invalid topic for will packet; ignoring")
-      end
+      buffer.u16_be(will.topic.size().u16())
+      buffer.write(will.topic)
+      buffer.u16_be(will.message.size().u16())
+      buffer.write(will.message)
     end
     // Auth
     try
@@ -456,7 +439,7 @@ actor MQTTConnection
 
   fun ref _disconnect(send_will: Bool = false) =>
     if not(_is_connected) then
-      _client.on_error(this, "Cannot disconnect: Already disconnected")
+      _client.on_error(this, MQTTErrorDisconnectDisconnected)
       return
     end
     if send_will then
@@ -472,15 +455,15 @@ actor MQTTConnection
 
   fun ref _subscribe(topic: String, qos: U8 = 0, id: U16 = 0) =>
     if not(MQTTTopic.validate_subscribe(topic)) then
-      _client.on_error(this, "Cannot subscribe: Invalid topic")
+      _client.on_error(this, MQTTErrorSubscribeTopic)
       return
     end
     if qos > 2 then
-      _client.on_error(this, "Cannot subscribe: Invalid QoS")
+      _client.on_error(this, MQTTErrorSubscribeQoS)
       return
     end
     if not(_is_connected) then
-      _client.on_error(this, "Cannot subscribe: Not connected")
+      _client.on_error(this, MQTTErrorSubscribeConnected)
       return
     end
     let buffer = Writer
@@ -507,11 +490,11 @@ actor MQTTConnection
 
   fun ref _unsubscribe(topic: String, id: U16 = 0) =>
     if not(MQTTTopic.validate_subscribe(topic)) then
-      _client.on_error(this, "Cannot unsubscribe: Invalid topic")
+      _client.on_error(this, MQTTErrorUnsubscribeTopic)
       return
     end
     if not(_is_connected) then
-      _client.on_error(this, "Cannot unsubscribe: Not connected")
+      _client.on_error(this, MQTTErrorUnsubscribeConnected)
       return
     end
     let buffer = Writer
@@ -537,11 +520,11 @@ actor MQTTConnection
 
   fun ref _publish(packet: MQTTPacket) =>
     if not(MQTTTopic.validate_publish(packet.topic)) then
-      _client.on_error(this, "Cannot publish: Invalid topic")
+      _client.on_error(this, MQTTErrorPublishTopic)
       return
     end
     if not(_is_connected) then
-      _client.on_error(this, "Cannot publish: Not connected")
+      _client.on_error(this, MQTTErrorPublishConnected)
       return
     end
     let buffer = Writer
@@ -627,7 +610,6 @@ actor MQTTConnection
     Pings the server in order to keep the connection alive.
     """
     if not(_is_connected) then
-      _client.on_error(this, "Cannot ping: Not connected")
       return
     end
     let buffer = Writer

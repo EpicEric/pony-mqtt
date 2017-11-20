@@ -1,12 +1,14 @@
 # Pony-MQTT
 
-A notify-based implementation of a MQTT client written in the [Pony language](https://www.ponylang.org/).
+A notify-based implementation of an MQTT client written in the
+[Pony language](https://www.ponylang.org/).
 
 ## Status
 
 [![Build Status](https://travis-ci.org/EpicEric/pony-mqtt.svg?branch=master)](https://travis-ci.org/EpicEric/pony-mqtt)
 
-Pony MQTT is in alpha version. Revisions are greatly appreciated, since this library likely contains major programming errors and bugs.
+Pony MQTT is in alpha version, which means breaking changes are expected.
+Revisions are greatly appreciated, since this library likely contains bugs.
 
 ### Available features
 
@@ -32,4 +34,6 @@ Pony MQTT is in alpha version. Revisions are greatly appreciated, since this lib
 
 ## Usage
 
-Please refer to the [official documentation](https://epiceric.gitbooks.io/pony-mqtt/) hosted on GitBook.
+Please refer to the
+[official documentation](https://epiceric.gitbooks.io/pony-mqtt/)
+hosted on GitBook.

@@ -27,12 +27,14 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
     try (_device as HomieDevice).message(packet) end
 
-  fun ref on_error(conn: MQTTConnection ref, message: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref, err: MQTTError, info: String)
+  =>
     _env.out.print(
       "[" +
       get_date() +
       "] " +
-      message)
+      err.string())
     try (_device as HomieDevice).stop() end
 
   fun tag get_date(): String =>
