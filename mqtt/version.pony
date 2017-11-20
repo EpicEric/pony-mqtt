@@ -1,4 +1,4 @@
-primitive MQTTv311
 primitive MQTTv31
+primitive MQTTv311
 
-type MQTTVersion is (MQTTv311 | MQTTv31)
+type MQTTVersion is (MQTTv31 | MQTTv311)

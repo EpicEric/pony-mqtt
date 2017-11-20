@@ -1,5 +1,3 @@
-use "buffered"
-use "collections"
 use "random"
 use "time"
 
@@ -20,29 +18,31 @@ primitive MQTTUtils
       else length end
     var string = recover String(length') end
     let rand: Rand = Rand(Time.nanos()) .> next()
-    for n in Range[USize](0, length') do
+    var n: USize = 0
+    while n < length' do
       try
         let char = rand.int(letters.size().u64()).usize()
         string.push(letters(char)?)
       end
+      n = n + 1
     end
-    string
+    consume string
 
-  fun tag remaining_length(length': USize): Array[U8] val =>
+  fun tag remaining_length(length: USize): Array[U8] val =>
   """
   Generates an array of bytes in the format specified by the MQTT protocol
   for the "Remaining Length" field.
   """
     let buffer = recover Array[U8] end
-    var length = length'
+    var length' = length
     repeat
       let byte: U8 =
-        if length >= 128 then
-          (length.u8() and 0x7F) or 0x80
+        if length' >= 128 then
+          (length'.u8() and 0x7F) or 0x80
         else
-          (length.u8() and 0x7F)
+          (length'.u8() and 0x7F)
         end
-      length = length >> 7
+      length' = length' >> 7
       buffer.push(byte)
-    until length == 0 end
+    until length' == 0 end
     buffer

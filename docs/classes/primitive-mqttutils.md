@@ -20,7 +20,7 @@ specified length with the provided characters.
 #### remaining\_length
 
 ```pony
-fun tag remaining_length(length': USize): Array[U8] val =>
+fun tag remaining_length(length: USize): Array[U8] val =>
 ```
 
 Receives an integer, and generates an array of bytes in the
