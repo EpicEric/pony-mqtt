@@ -679,3 +679,9 @@ actor MQTTConnection
       packet.retain,
       packet.qos,
       if _sent_packets.contains(packet.id) then 0 else packet.id end))
+
+  be dispose() =>
+    """
+    Disposes of this connection.
+    """
+    _end_connection(true)

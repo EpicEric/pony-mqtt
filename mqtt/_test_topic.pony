@@ -11,7 +11,10 @@ actor _TestTopic is TestList
 
 class _TestTopicPublishValid is UnitTest
   fun name(): String =>
-    "mqtt/TopicPublishValid"
+    "MQTT/Topic/PublishValid"
+
+  fun label(): String =>
+    "topic"
 
   fun ref apply(h: TestHelper) =>
     h.assert_true(MQTTTopic.validate_publish("/"))
@@ -25,7 +28,10 @@ class _TestTopicPublishValid is UnitTest
 
 class _TestTopicPublishInvalid is UnitTest
   fun name(): String =>
-    "mqtt/TopicPublishInvalid"
+    "MQTT/Topic/PublishInvalid"
+
+  fun label(): String =>
+    "topic"
 
   fun ref apply(h: TestHelper) =>
     h.assert_false(MQTTTopic.validate_publish(""))
@@ -41,7 +47,10 @@ class _TestTopicPublishInvalid is UnitTest
 
 class _TestTopicSubscribeValid is UnitTest
   fun name(): String =>
-    "mqtt/TopicSubscribeValid"
+    "MQTT/Topic/SubscribeValid"
+
+  fun label(): String =>
+    "topic"
 
   fun ref apply(h: TestHelper) =>
     h.assert_true(MQTTTopic.validate_subscribe("/"))
@@ -61,7 +70,10 @@ class _TestTopicSubscribeValid is UnitTest
 
 class _TestTopicSubscribeInvalid is UnitTest
   fun name(): String =>
-    "mqtt/TopicSubscribeInvalid"
+    "MQTT/Topic/SubscribeInvalid"
+
+  fun label(): String =>
+    "topic"
 
   fun ref apply(h: TestHelper) =>
     h.assert_false(MQTTTopic.validate_subscribe(""))
@@ -80,8 +92,11 @@ class _TestTopicSubscribeInvalid is UnitTest
 
 class _TestTopicMatchValid is UnitTest
   fun name(): String =>
-    "mqtt/TopicMatchValid"
-  
+    "MQTT/Topic/MatchValid"
+
+  fun label(): String =>
+    "topic"
+
   fun ref apply(h: TestHelper) =>
     h.assert_true(MQTTTopic.match_topic("pony/lang", "pony/lang"))
     h.assert_true(MQTTTopic.match_topic("foo/biz/bar", "foo/+/bar"))
@@ -96,8 +111,11 @@ class _TestTopicMatchValid is UnitTest
 
 class _TestTopicMatchInvalid is UnitTest
   fun name(): String =>
-    "mqtt/TopicMatchInvalid"
-  
+    "MQTT/Topic/MatchInvalid"
+
+  fun label(): String =>
+    "topic"
+
   fun ref apply(h: TestHelper) =>
     h.assert_false(MQTTTopic.match_topic("pony/lang", "pony/lang/"))
     h.assert_false(MQTTTopic.match_topic("pony/lang/", "pony/lang"))
