@@ -372,9 +372,9 @@ actor MQTTConnection
     buffer.write(
       match _version
       | MQTTv311 =>
-        [0x00; 0x04; 'M'; 'Q'; 'T'; 'T'; 0x04]
+        [ 0x00; 0x04; 'M'; 'Q'; 'T'; 'T'; 0x04 ]
       | MQTTv31 =>
-        [0x00; 0x06; 'M'; 'Q'; 'I'; 's'; 'd'; 'p'; 0x03]
+        [ 0x00; 0x06; 'M'; 'Q'; 'I'; 's'; 'd'; 'p'; 0x03 ]
       end
     )
     // Flags
