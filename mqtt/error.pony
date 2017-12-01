@@ -1,158 +1,110 @@
 primitive MQTTErrorConnectConnected
-  fun string(): String iso^ =>
-    recover
-      "Cannot connect: Already connected".clone()
-    end
+  fun string(): String =>
+    "Cannot connect: Already connected"
 
 primitive MQTTErrorConnectSocket
-  fun string(): String iso^ =>
-    recover
-      "Cannot connect: No connection established".clone()
-    end
+  fun string(): String =>
+    "Cannot connect: No connection established"
 
 primitive MQTTErrorDisconnectDisconnected
-  fun string(): String iso^ =>
-    recover
-      "Cannot disconnect: Already disconnected".clone()
-    end
+  fun string(): String =>
+    "Cannot disconnect: Already disconnected"
 
 primitive MQTTErrorSubscribeTopic
-  fun string(): String iso^ =>
-    recover
-      "Cannot subscribe: Invalid topic".clone()
-    end
+  fun string(): String =>
+    "Cannot subscribe: Invalid topic"
 
 primitive MQTTErrorSubscribeQoS
-  fun string(): String iso^ =>
-    recover
-      "Cannot subscribe: Invalid QoS".clone()
-    end
+  fun string(): String =>
+    "Cannot subscribe: Invalid QoS"
 
 primitive MQTTErrorSubscribeConnected
-  fun string(): String iso^ =>
-    recover
-      "Cannot subscribe: Not connected".clone()
-    end
+  fun string(): String =>
+    "Cannot subscribe: Not connected"
 
 primitive MQTTErrorUnsubscribeTopic
-  fun string(): String iso^ =>
-    recover
-      "Cannot unsubscribe: Invalid topic".clone()
-    end
+  fun string(): String =>
+    "Cannot unsubscribe: Invalid topic"
 
 primitive MQTTErrorUnsubscribeConnected
-  fun string(): String iso^ =>
-    recover
-      "Cannot unsubscribe: Not connected".clone()
-    end
+  fun string(): String =>
+    "Cannot unsubscribe: Not connected"
 
 primitive MQTTErrorPublishTopic
-  fun string(): String iso^ =>
-    recover
-      "Cannot publish: Invalid topic".clone()
-    end
+  fun string(): String =>
+    "Cannot publish: Invalid topic"
 
 primitive MQTTErrorPublishConnected
-  fun string(): String iso^ =>
-    recover
-      "Cannot publish: Not connected".clone()
-    end
+  fun string(): String =>
+    "Cannot publish: Not connected"
 
 primitive MQTTErrorConnectFailedRetry
-  fun string(): String iso^ =>
-    recover
-      "[CONNECT] Could not establish a connection; retrying".clone()
-    end
+  fun string(): String =>
+    "[CONNECT] Could not establish a connection; retrying"
 
 primitive MQTTErrorConnectFailed
-  fun string(): String iso^ =>
-    recover
-      "[CONNECT] Could not establish a connection".clone()
-    end
+  fun string(): String =>
+    "[CONNECT] Could not establish a connection"
 
 primitive MQTTErrorSocketRetry
-  fun string(): String iso^ =>
-    recover
-      "Connection closed by remote server; retrying".clone()
-    end
+  fun string(): String =>
+    "Connection closed by remote server; retrying"
 
 primitive MQTTErrorSocket
-  fun string(): String iso^ =>
-    recover
-      "Connection closed by remote server".clone()
-    end
+  fun string(): String =>
+    "Connection closed by remote server"
+
+primitive MQTTErrorTLS
+  fun string(): String =>
+    "Invalid TLS configuration"
 
 primitive MQTTErrorConnectProtocol
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Unnacceptable protocol version".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Unnacceptable protocol version"
 
 primitive MQTTErrorConnectProtocolRetry
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Unnacceptable protocol version; retrying".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Unnacceptable protocol version; retrying"
 
 primitive MQTTErrorConnectID
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Connection ID rejected".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Connection ID rejected"
 
 primitive MQTTErrorConnectIDRetry
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Connection ID rejected; retrying".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Connection ID rejected; retrying"
 
 primitive MQTTErrorConnectServer
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Server unavailable".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Server unavailable"
 
 primitive MQTTErrorConnectServerRetry
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Server unavailable; retrying".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Server unavailable; retrying"
 
 primitive MQTTErrorConnectAuthentication
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Bad user name or password".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Bad user name or password"
 
 primitive MQTTErrorConnectAuthorization
-  fun string(): String iso^ =>
-    recover
-      "[CONNACK] Unauthorized client".clone()
-    end
+  fun string(): String =>
+    "[CONNACK] Unauthorized client"
 
 primitive MQTTErrorSubscribeFailure
-  fun string(): String iso^ =>
-    recover
-      "[SUBACK] Could not subscribe to topic".clone()
-    end
+  fun string(): String =>
+    "[SUBACK] Could not subscribe to topic"
 
 primitive MQTTErrorServerCode
-  fun string(): String iso^ =>
-    recover
-      "Unexpected server control code; disconnecting".clone()
-    end
+  fun string(): String =>
+    "Unexpected server control code; disconnecting"
 
 primitive MQTTErrorUnknownCode
-  fun string(): String iso^ =>
-    recover
-      "Unknown control code; disconnecting".clone()
-    end
+  fun string(): String =>
+    "Unknown control code; disconnecting"
 
 primitive MQTTErrorUnexpectedFormat
-  fun string(): String iso^ =>
-    recover
-      "Unexpected format when processing packet; disconnecting".clone()
-    end
+  fun string(): String =>
+    "Unexpected format when processing packet; disconnecting"
 
 type MQTTError is
   ( MQTTErrorConnectConnected
@@ -169,6 +121,7 @@ type MQTTError is
   | MQTTErrorConnectFailed
   | MQTTErrorSocketRetry
   | MQTTErrorSocket
+  | MQTTErrorTLS
   | MQTTErrorConnectProtocol
   | MQTTErrorConnectProtocolRetry
   | MQTTErrorConnectID
@@ -180,5 +133,4 @@ type MQTTError is
   | MQTTErrorSubscribeFailure
   | MQTTErrorServerCode
   | MQTTErrorUnknownCode
-  | MQTTErrorUnexpectedFormat
-  )
+  | MQTTErrorUnexpectedFormat)

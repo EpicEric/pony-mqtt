@@ -3,6 +3,7 @@ interface MQTTConnectionNotify
   A notify interface to create an event-based client class
   for your MQTT connections.
   """
+
   fun ref on_connect(conn: MQTTConnection ref) =>
     """
     Called after successfully connecting to an MQTT broker.

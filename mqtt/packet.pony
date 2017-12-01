@@ -4,6 +4,7 @@ class val MQTTPacket
   the message, if the message is retained, the designated QoS,
   and a connection-specific ID.
   """
+
   let topic: String
   let message: Array[U8] val
   let retain: Bool

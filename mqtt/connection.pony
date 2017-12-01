@@ -1,6 +1,7 @@
 use "buffered"
 use "collections"
 use "net"
+use "net/ssl"
 use "time"
 
 actor MQTTConnection
@@ -11,6 +12,7 @@ actor MQTTConnection
   MQTTConnectionNotify. This allows for all expected capabilities of
   a regular MQTT client.
   """
+
   let auth: TCPConnectionAuth
   let host: String
   let port: String
@@ -19,6 +21,8 @@ actor MQTTConnection
   let _user: (String | None)
   let _pass: (String | None)
   let _retry_connection: Bool
+  let _sslctx: (SSLContext | None)
+  let _sslhost: String
   let _will_packet: (MQTTPacket | None)
   let _ping_time: U64
   let _resend_time: U64
@@ -47,6 +51,8 @@ actor MQTTConnection
     keepalive': U16 = 15,
     version': MQTTVersion = MQTTv311,
     retry_connection': U64 = 0,
+    sslctx': (SSLContext | None) = None,
+    sslhost': String = "",
     will_packet': (MQTTPacket | None) = None,
     client_id': String = "",
     user': (String | None) = None,
@@ -71,8 +77,10 @@ actor MQTTConnection
       _reconnect_time = 1_000_000_000 * retry_connection'
     else
       _retry_connection = false
-      _reconnect_time = 1_000_000_000 * retry_connection'
+      _reconnect_time = 0
     end
+    _sslctx = sslctx'
+    _sslhost = sslhost'
     _will_packet =
       try
         let wp = will_packet' as MQTTPacket
@@ -93,7 +101,11 @@ actor MQTTConnection
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
+<<<<<<< HEAD
     TCPConnection(auth, _MQTTConnectionHandler(this), host, port)
+=======
+    _new_connection()
+>>>>>>> Add initial TSL support (#8)
 
   be _connected(
     conn: TCPConnection,
@@ -178,7 +190,7 @@ actor MQTTConnection
             match _version
             | MQTTv311 =>
               _update_version(MQTTv31)
-              _new_conn()
+              _new_connection()
             end
           else
             _client.on_error(this, MQTTErrorConnectProtocol)
@@ -187,14 +199,14 @@ actor MQTTConnection
           if _retry_connection then
             _client.on_error(this, MQTTErrorConnectIDRetry)
             _client_id = MQTTUtils.random_string()
-            _new_conn()
+            _new_connection()
           else
             _client.on_error(this, MQTTErrorConnectID)
           end
         | 3 =>
           if _retry_connection then
             _client.on_error(this, MQTTErrorConnectServerRetry)
-            _new_conn()
+            _new_connection()
           else
             _client.on_error(this, MQTTErrorConnectServer)
           end
@@ -320,9 +332,30 @@ actor MQTTConnection
     _unimplemented.update(0xC0, "PINGREQ")
     _unimplemented.update(0xE0, "DISCONNECT")
 
-  be _new_conn() =>
+  be _new_connection() =>
     _end_connection()
+<<<<<<< HEAD
     TCPConnection(auth, _MQTTConnectionHandler(this), host, port)
+=======
+    match _sslctx
+    | let ctx: SSLContext =>
+      try
+        TCPConnection(
+          auth,
+          SSLConnection(
+            _MQTTConnectionManager(this),
+            ctx.client(_sslhost)?),
+          host,
+          port)
+        return
+      else
+        _client.on_error(this, MQTTErrorTLS)
+        return
+      end
+    else
+      TCPConnection(auth, _MQTTConnectionManager(this), host, port)
+    end
+>>>>>>> Add initial TSL support (#8)
 
   fun ref _connect() =>
     """

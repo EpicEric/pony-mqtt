@@ -1,9 +1,17 @@
-use "ponytest"
+use "files"
 use "net"
+use "net/ssl"
+use "ponytest"
 
 actor _TestConnection is TestList
+  """
+  Integration tests that verify different functionalities of the
+  MQTTConnection actor when connecting to a server.
+  """
+
   fun tag tests(test: PonyTest) =>
     test(_TestConnectionConnect)
+    test(_TestConnectionConnectTLS)
     test(_TestConnectionUnacceptedVersion)
     test(_TestConnectionAuthentication)
     test(_TestConnectionAuthenticationError)
@@ -20,11 +28,14 @@ class _TestConnectionListenNotify is TCPListenNotify
   Runs a test MQTT client and broker server on a dynamically available
   TCP port.
   """
+
   let _h: TestHelper
   var _client: (MQTTConnectionNotify iso | None) = None
   var _server: (TCPConnectionNotify iso | None) = None
   var _server_retry: (TCPConnectionNotify iso | None) = None
   var _keepalive: U16 = 15
+  var _sslctx: (SSLContext | None) = None
+  var _sslhost: String = ""
   var _version: MQTTVersion = MQTTv311
   var _retry_connection: U64 = 0
   var _will_packet: (MQTTPacket | None) = None
@@ -40,6 +51,8 @@ class _TestConnectionListenNotify is TCPListenNotify
     server: TCPConnectionNotify iso,
     server_retry: (TCPConnectionNotify iso | None) = None,
     keepalive: U16 = 15,
+    sslctx: (SSLContext | None) = None,
+    sslhost: String = "",
     version: MQTTVersion = MQTTv311,
     retry_connection: U64 = 0,
     will_packet: (MQTTPacket | None) = None,
@@ -52,6 +65,8 @@ class _TestConnectionListenNotify is TCPListenNotify
     _server = consume server
     _server_retry = consume server_retry
     _keepalive = keepalive
+    _sslctx = sslctx
+    _sslhost = sslhost
     _version = version
     _retry_connection = retry_connection
     _will_packet = will_packet
@@ -91,6 +106,8 @@ class _TestConnectionListenNotify is TCPListenNotify
         _keepalive,
         _version,
         _retry_connection,
+        _sslctx,
+        _sslhost,
         _will_packet,
         _client_id,
         _user,
@@ -109,13 +126,22 @@ class _TestConnectionListenNotify is TCPListenNotify
       else
         _h.complete_action("server accept retry")
       end
-      consume notify
+      if _sslctx is SSLContext then
+        let ssl = (_sslctx as SSLContext).server()?
+        SSLConnection(consume notify, consume ssl)
+      else
+        consume notify
+      end
     else
       _h.fail("server accept")
       error
     end
 
 class iso _TestConnectionConnect is UnitTest
+  """
+  Attempt a basic connection to an MQTT server.
+  """
+
   fun name(): String =>
     "MQTT/Connection/Connect"
 
@@ -169,7 +195,67 @@ class _TestConnectionConnectServer is TCPConnectionNotify
   fun ref connect_failed(conn: TCPConnection ref) =>
     _h.fail_action("mqtt connect")
 
+class iso _TestConnectionConnectTLS is UnitTest
+  """
+  Attempt a TSL connection to an MQTT server.
+  """
+
+  fun name(): String =>
+    "MQTT/Connection/ConnectTSL"
+
+  fun label(): String =>
+    "connection"
+
+  fun exclusion_group(): String =>
+    "network"
+
+  fun ref apply(h: TestHelper) ? =>
+    h.expect_action("mqtt connect")
+    h.expect_action("mqtt connack")
+    let auth = h.env.root as AmbientAuth
+    let cert: FilePath = try
+      FilePath(auth, "./mqtt/_test/cert.pem")?
+    else
+      h.fail("cert.pem")
+      error
+    end
+    let key: FilePath = try
+      FilePath(auth, "./mqtt/_test/key.pem")?
+    else
+      h.fail("key.pem")
+      error
+    end
+    let sslctx: SSLContext =
+      recover
+        let ctx = SSLContext
+        try
+          ctx.set_authority(cert)?
+        else
+          h.fail("ctx.set_authority()")
+          error
+        end
+        try
+          ctx.set_cert(cert, key)?
+        else
+          h.fail("ctx.set_cert()")
+          error
+        end
+        ctx.set_client_verify(true)
+        ctx.set_server_verify(true)
+        ctx
+      end
+    _TestConnectionListenNotify(h)(
+      _TestConnectionConnectClient(h),
+      _TestConnectionConnectServer(h)
+      where sslctx = sslctx,
+      sslhost = "")
+
 class iso _TestConnectionUnacceptedVersion is UnitTest
+  """
+  Fails on first connection to server due to unsupported protocol version 3.1.1,
+  and retries with version 3.1, which must be successful.
+  """
+
   fun name(): String =>
     "MQTT/Connection/UnacceptedVersion"
 
@@ -193,14 +279,19 @@ class iso _TestConnectionUnacceptedVersion is UnitTest
 
 class _TestConnectionUnacceptedVersionClient is MQTTConnectionNotify
   let _h: TestHelper
+  var _first_try: Bool
 
   new iso create(h: TestHelper) =>
     _h = h
+    _first_try = true
 
   fun ref on_connect(conn: MQTTConnection ref) =>
+    _h.assert_false(_first_try)
     _h.complete_action("mqtt connack good")
 
   fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+    _h.assert_true(_first_try)
+    _first_try = false
     _h.assert_is[MQTTError](err, MQTTErrorConnectProtocolRetry)
     _h.complete_action("mqtt connack bad")
 

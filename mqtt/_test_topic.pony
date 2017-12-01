@@ -1,6 +1,11 @@
 use "ponytest"
 
 actor _TestTopic is TestList
+  """
+  Unit tests that verify the functionality of the methods in the MQTTTopic
+  primitive.
+  """
+
   fun tag tests(test: PonyTest) =>
     test(_TestTopicPublishValid)
     test(_TestTopicPublishInvalid)
@@ -10,6 +15,10 @@ actor _TestTopic is TestList
     test(_TestTopicMatchInvalid)
 
 class _TestTopicPublishValid is UnitTest
+  """
+  Verify that the following PUBLISH topics are valid.
+  """
+
   fun name(): String =>
     "MQTT/Topic/PublishValid"
 
@@ -27,6 +36,10 @@ class _TestTopicPublishValid is UnitTest
     h.assert_true(MQTTTopic.validate_publish("///"))
 
 class _TestTopicPublishInvalid is UnitTest
+  """
+  Verify that the following PUBLISH topics are invalid.
+  """
+
   fun name(): String =>
     "MQTT/Topic/PublishInvalid"
 
@@ -46,6 +59,10 @@ class _TestTopicPublishInvalid is UnitTest
     h.assert_false(MQTTTopic.validate_publish("foo/+/bar"))
 
 class _TestTopicSubscribeValid is UnitTest
+  """
+  Verify that the following SUBSCRIBE topics are valid.
+  """
+
   fun name(): String =>
     "MQTT/Topic/SubscribeValid"
 
@@ -69,6 +86,10 @@ class _TestTopicSubscribeValid is UnitTest
     h.assert_true(MQTTTopic.validate_subscribe("///"))
 
 class _TestTopicSubscribeInvalid is UnitTest
+  """
+  Verify that the following SUBSCRIBE topics are invalid.
+  """
+
   fun name(): String =>
     "MQTT/Topic/SubscribeInvalid"
 
@@ -91,6 +112,10 @@ class _TestTopicSubscribeInvalid is UnitTest
     h.assert_false(MQTTTopic.validate_subscribe("good/morning#"))
 
 class _TestTopicMatchValid is UnitTest
+  """
+  Verify that the topics match the provided filters.
+  """
+
   fun name(): String =>
     "MQTT/Topic/MatchValid"
 
@@ -110,6 +135,10 @@ class _TestTopicMatchValid is UnitTest
     h.assert_true(MQTTTopic.match_topic("/finance", "/+"))
 
 class _TestTopicMatchInvalid is UnitTest
+  """
+  Verify that the topics do not match the provided filters.
+  """
+
   fun name(): String =>
     "MQTT/Topic/MatchInvalid"
 
