@@ -48,6 +48,8 @@ new create(
   keepalive': U16 = 15,
   version': MQTTVersion = MQTTv311,
   retry_connection': U64 = 0,
+  sslctx': (SSLContext | None) = None,
+  sslhost': String = "",
   will_packet': (MQTTPacket | None) = None,
   client_id': String = "",
   user': (String | None) = None,
@@ -82,6 +84,14 @@ protocol. By default, it uses the fourth release of the protocol, version 3.1.1.
 * `retry_connection'`: When the connection is closed by the server or due to a
 client error, attempt to reconnect at the specified interval in seconds.
 A value of zero means no reattempt will be made. Default is `0`.
+
+* `sslctx'`: An SSLContext object, with client and certificate authority set
+appropriately, used when connecting to a TLS port in a broker. A value of
+`None` means no security will be implemented over the socket.
+Default is `None`.
+
+* `sslhost'`: A String representing a host for signed certificates. If the
+hostname isn't part of the certificate, leave it blank. Default is `""`.
 
 * `will_packet'`: MQTT allows the client to send a
 [will message](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Will_Flag)
@@ -168,15 +178,15 @@ type of disconnection:
 * **Socket errors** \(i.e. network has crashed, server was shut down etc.\):
 The program simply creates a
 [reconnect timer](/classes/class-mqttreconnecttimer.md)
-\(more information in the next section\) that periodically calls `_new_conn()`,
-which simply kickstarts a new TCPConnection with the same parameters.
-This timer can only be started upon calling `closed()`, if `_is_connected`
-was `true`.
+\(more information in the next section\) that periodically calls
+`_new_connection()`, which simply kickstarts a new TCPConnection with the same
+parameters. This timer can only be started upon calling `closed()`, if
+`_is_connected` was `true`.
 
 * **CONNACK errors** \(i.e. wrong connection parameters\): The program closes
 the connection from the client side, alters its parameters, and retries with
-`_new_conn()`. Here are the three different correctable errors and how the
-client attempts to fix them:
+`_new_connection()`. Here are the three different correctable errors and how
+the client attempts to fix them:
 
   1. _Unnacceptable protocol version_: Try with an older protocol version
   \(for example, 3.1 instead of 3.1.1\). If already at the oldest protocol

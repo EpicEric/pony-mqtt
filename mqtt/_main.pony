@@ -5,5 +5,5 @@ actor Main is TestList
     PonyTest(env, this)
 
   fun tag tests(test: PonyTest) =>
-    _TestTopic.tests(test)
     _TestConnection.tests(test)
+    _TestTopic.tests(test)

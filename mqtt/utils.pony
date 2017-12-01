@@ -5,6 +5,7 @@ primitive MQTTUtils
   """
   An utility with functions used throughout MQTTConnection.
   """
+
   fun tag random_string(
     length: USize = 8,
     letters: String = "0123456789abcdef"): String iso^ =>

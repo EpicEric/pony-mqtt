@@ -4,6 +4,7 @@ class _MQTTPingTimer is TimerNotify
   """
   A timer for ping requests.
   """
+
   let _conn: MQTTConnection
 
   new iso create(conn: MQTTConnection) =>
@@ -17,6 +18,7 @@ class _MQTTResendTimer is TimerNotify
   """
   A timer for lost packet resends.
   """
+
   let _conn: MQTTConnection
 
   new iso create(conn: MQTTConnection) =>
@@ -28,13 +30,14 @@ class _MQTTResendTimer is TimerNotify
 
 class _MQTTReconnectTimer is TimerNotify
   """
-  A timer for lost packet resends.
+  A timer for reconnection attempts.
   """
+
   let _conn: MQTTConnection
 
   new iso create(conn: MQTTConnection) =>
     _conn = conn
 
   fun ref apply(timer: Timer, count: U64): Bool =>
-    _conn._new_conn()
+    _conn._new_connection()
     true

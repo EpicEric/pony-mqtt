@@ -2,6 +2,7 @@ primitive MQTTTopic
   """
   An utility to validate topics upon publishing or subscribing.
   """
+
   fun tag validate_publish(topic: String): Bool =>
     """
     Valid PUBLISH topics do not contain '#' or '+'.
