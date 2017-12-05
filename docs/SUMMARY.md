@@ -11,7 +11,7 @@
     * [primitive MQTTTopic](classes/primitive-mqtttopic.md)
     * [primitive MQTTUtils](classes/primitive-mqttutils.md)
   * [Private classes](classes/private-classes.md)
-    * [class \_MQTTConnectionManager](classes/class-mqttconnectionmanager.md)
+    * [class \_MQTTConnectionHandler](classes/class-mqttconnectionhandler.md)
     * [class \_MQTTPingTimer](classes/class-mqttpingtimer.md)
     * [class \_MQTTResendTimer](classes/class-mqttresendtimer.md)
     * [class \_MQTTReconnectTimer](classes/class-mqttreconnecttimer.md)

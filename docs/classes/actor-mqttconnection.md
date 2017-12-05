@@ -8,7 +8,7 @@ subscribing to topics, and triggers events in a
 [notify class](//classes/interface-mqttconnectionnotify.md)
 when receiving a request from the server or when encountering an error.
 
-It creates a [TCPConnectionNotify](//classes/class-mqttconnectionmanager.md)
+It creates a [TCPConnectionNotify](//classes/class-mqttconnectionhandler.md)
 object of its own, to interface with a TCP connection only through it. It also
 creates
 [three](//classes/class-mqttpingtimer.md)
@@ -146,11 +146,11 @@ behind the scenes. Be warned!
 #### Communication over TCP
 
 Pony-MQTT uses a
-[\_MQTTConnectionManager](//classes/class-mqttconnectionmanager.md)
+[\_MQTTConnectionHandler](//classes/class-mqttconnectionhandler.md)
 class that implements a TCPConnectionNotify to handle events. It receives
 messages \(`connected`, `connect_failed`, `closed`, `received`\) by private
 methods with the same name, with arguments `TCPConnection` and
-`_MQTTConnectionManager` tags as verification.
+`_MQTTConnectionHandler` tags as verification.
 
 In the case of `_received`, however, we must receive data which may be
 incomplete -- which can be verified by the Remaining Length field from MQTT

@@ -7,7 +7,7 @@ actor MQTTConnection
   """
   An actor that handles the entire MQTT connection.
 
-  It can receive data through an _MQTTConnectionManager, or commands from an
+  It can receive data through an _MQTTConnectionHandler, or commands from an
   MQTTConnectionNotify. This allows for all expected capabilities of
   a regular MQTT client.
   """
@@ -24,7 +24,6 @@ actor MQTTConnection
   let _resend_time: U64
   let _reconnect_time: U64
   let _timers: Timers = Timers
-  let _data_buffer: Reader = Reader
   let _unimplemented: Map[U8, String] = _unimplemented.create()
   let _sent_packets: Map[U16, MQTTPacket] = _sent_packets.create()
   let _received_packets: Map[U16, MQTTPacket] = _received_packets.create()
@@ -91,9 +90,12 @@ actor MQTTConnection
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
-    TCPConnection(auth, _MQTTConnectionManager(this), host, port)
+    TCPConnection(auth, _MQTTConnectionHandler(this), host, port)
 
-  be _connected(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
+  be _connected(
+    conn: TCPConnection,
+    notify: _MQTTConnectionHandler tag)
+  =>
     _end_connection(false)
     try
       _timers.cancel(_reconnect_timer as Timer tag)
@@ -102,7 +104,10 @@ actor MQTTConnection
     _conn = conn
     _connect()
 
-  be _connect_failed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
+  be _connect_failed(
+    conn: TCPConnection,
+    notify: _MQTTConnectionHandler tag)
+  =>
     if _is_connected and _retry_connection then
       _client.on_error(this, MQTTErrorConnectFailedRetry)
       let reconnect_timer = Timer(
@@ -114,7 +119,10 @@ actor MQTTConnection
       _client.on_error(this, MQTTErrorConnectFailed)
     end
 
-  be _closed(conn: TCPConnection, notify: TCPConnectionNotify tag) =>
+  be _closed(
+    conn: TCPConnection,
+    notify: _MQTTConnectionHandler tag)
+  =>
     if _is_connected then
       if _retry_connection then
         _client.on_error(this, MQTTErrorSocketRetry)
@@ -131,52 +139,13 @@ actor MQTTConnection
       _client.on_disconnect(this)
     end
 
-  be _received(
+  be _parse_packet(
     conn: TCPConnection,
-    notify: TCPConnectionNotify tag,
-    data: Array[U8] iso)
+    notify: _MQTTConnectionHandler tag,
+    data: Array[U8] val)
   =>
     """
-    Combines and breaks received data into control packets, based on the
-    remaining length value.
-    """
-    let full_data: Array[U8] val = consume data
-    _data_buffer.append(full_data)
-    let buffer = Writer
-    try
-      while _data_buffer.size() > 0 do
-        buffer.u8(_data_buffer.u8()?)
-        var remaining_length: USize = 0
-        var shift_amount: USize = 0
-        var temp: U8 = 0x80
-        repeat
-          temp = _data_buffer.u8()?
-          remaining_length =
-            remaining_length + ((temp and 0x7F).usize() << shift_amount)
-          shift_amount = shift_amount + 7
-          buffer.u8(temp)
-        until (temp and 0x80) == 0x0 end
-        if remaining_length <= _data_buffer.size() then
-          buffer.write(_data_buffer.block(remaining_length)?)
-          let packet_data = recover iso Array[U8] end
-          for chunk in buffer.done().values() do
-            packet_data.append(chunk)
-          end
-          _parse_packet(consume packet_data)
-        else
-          error
-        end
-      end
-    else
-      try buffer.write(_data_buffer.block(_data_buffer.size())?) end
-      for chunk in buffer.done().values() do
-        _data_buffer.append(chunk)
-      end
-    end
-
-  be _parse_packet(data: Array[U8] val) =>
-    """
-    Parses and acts according a single control packet.
+    Parses and acts according to a single control packet.
     """
     let buffer = Reader
     buffer.append(data)
@@ -332,7 +301,6 @@ actor MQTTConnection
       _conn = None
     end
     _packet_id = 0
-    _data_buffer.clear()
     _clean_timers()
     _sent_packets.clear()
     _received_packets.clear()
@@ -351,7 +319,7 @@ actor MQTTConnection
 
   be _new_conn() =>
     _end_connection()
-    TCPConnection(auth, _MQTTConnectionManager(this), host, port)
+    TCPConnection(auth, _MQTTConnectionHandler(this), host, port)
 
   fun ref _connect() =>
     """
