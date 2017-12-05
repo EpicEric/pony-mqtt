@@ -26,6 +26,7 @@ MQTTErrorConnectFailedRetry | Error when establishing TCP connection. | Attempt 
 MQTTErrorConnectFailed | Error when establishing TCP connection. | End execution. |
 MQTTErrorSocketRetry | TCP connection closed by remote server. | Attempt reconnection. |
 MQTTErrorSocket | TCP connection closed by remote server. | End execution. |
+MQTTErrorTLS | Failure when creating an SSL client. | End execution. |
 MQTTErrorConnectProtocol | Invalid [MQTT version](//classes/type-mqttversion.md). | End execution. |
 MQTTErrorConnectProtocolRetry | Invalid [MQTT version](//classes/type-mqttversion.md). | Attempt reconnection with lower protocol version. |
 MQTTErrorConnectID | Invalid client ID. | End execution. |
