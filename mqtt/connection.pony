@@ -13,7 +13,7 @@ actor MQTTConnection
   a regular MQTT client.
   """
 
-  let auth: TCPConnectionAuth
+  let auth: AmbientAuth
   let host: String
   let port: String
   let _client: MQTTConnectionNotify
@@ -44,7 +44,7 @@ actor MQTTConnection
   var _reconnect_timer: (Timer tag | None) = None
 
   new create(
-    auth': TCPConnectionAuth,
+    auth': AmbientAuth,
     notify': MQTTConnectionNotify iso,
     host': String,
     port': String = "1883",
@@ -101,11 +101,7 @@ actor MQTTConnection
     _ping_time = 750_000_000 * _keepalive.u64()
     _resend_time = 1_000_000_000
     _update_version(version')
-<<<<<<< HEAD
-    TCPConnection(auth, _MQTTConnectionHandler(this), host, port)
-=======
     _new_connection()
->>>>>>> Add initial TSL support (#8)
 
   be _connected(
     conn: TCPConnection,
@@ -334,16 +330,13 @@ actor MQTTConnection
 
   be _new_connection() =>
     _end_connection()
-<<<<<<< HEAD
-    TCPConnection(auth, _MQTTConnectionHandler(this), host, port)
-=======
     match _sslctx
     | let ctx: SSLContext =>
       try
         TCPConnection(
           auth,
           SSLConnection(
-            _MQTTConnectionManager(this),
+            _MQTTConnectionHandler(this, auth),
             ctx.client(_sslhost)?),
           host,
           port)
@@ -353,9 +346,8 @@ actor MQTTConnection
         return
       end
     else
-      TCPConnection(auth, _MQTTConnectionManager(this), host, port)
+      TCPConnection(auth, _MQTTConnectionHandler(this, auth), host, port)
     end
->>>>>>> Add initial TSL support (#8)
 
   fun ref _connect() =>
     """
@@ -420,7 +412,7 @@ actor MQTTConnection
       buffer.u16_be(will.message.size().u16())
       buffer.write(will.message)
     end
-    // Auth
+    // Authentication
     try
       let user = _user as String
       buffer.u16_be(user.size().u16())

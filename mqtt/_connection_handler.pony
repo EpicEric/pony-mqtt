@@ -1,3 +1,4 @@
+use "backpressure"
 use "buffered"
 use "net"
 
@@ -7,10 +8,12 @@ class _MQTTConnectionHandler is TCPConnectionNotify
   to an MQTTConnection actor.
   """
   let _connection: MQTTConnection
+  let _auth: BackpressureAuth
   let _data_buffer: Reader = Reader
 
-  new iso create(connection: MQTTConnection) =>
+  new iso create(connection: MQTTConnection, auth: BackpressureAuth) =>
     _connection = connection
+    _auth = auth
 
   fun ref connected(conn: TCPConnection ref) =>
     _connection._connected(conn, this)
@@ -62,3 +65,9 @@ class _MQTTConnectionHandler is TCPConnectionNotify
       end
     end
     true
+
+  fun ref throttled(conn: TCPConnection ref) =>
+    Backpressure.apply(_auth)
+
+  fun ref unthrottled(conn: TCPConnection ref) =>
+    Backpressure.release(_auth)
