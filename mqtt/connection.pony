@@ -62,7 +62,10 @@ actor MQTTConnection
       try
         if (user' as String).size() > 0 then user' else None end
       else None end
-    _pass = if _user is None then None else pass' end
+    _pass =
+      try
+        if (pass' as String).size() > 0 then pass' else None end
+      else None end
     if retry_connection' > 0 then
       _retry_connection = true
       _reconnect_time = 1_000_000_000 * retry_connection'
@@ -348,9 +351,18 @@ actor MQTTConnection
     // Flags
     buffer.u8(
       0x02 or
-      if _user is String then
-        if _pass is String then 0xC0 else 0x80 end
-      else 0x00 end or
+      try
+        let user = _user as String
+        0x80 or
+          try
+            let pass = _pass as String
+            0x40
+          else
+            0x00
+          end
+      else
+        0x00
+      end or
         try
           let will: MQTTPacket = _will_packet as MQTTPacket
             if will.retain then
@@ -377,13 +389,13 @@ actor MQTTConnection
     end
     // Auth
     try
-      if _user is String then
-        buffer.u16_be((_user as String).size().u16())
-        buffer.write(_user as String)
-        if _pass is String then
-          buffer.u16_be((_pass as String).size().u16())
-          buffer.write(_pass as String)
-        end
+      let user = _user as String
+      buffer.u16_be(user.size().u16())
+      buffer.write(user)
+      try
+        let pass = _pass as String
+        buffer.u16_be(pass.size().u16())
+        buffer.write(pass)
       end
     end
     // -- Fixed header --
