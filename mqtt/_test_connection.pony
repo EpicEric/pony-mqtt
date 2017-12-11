@@ -79,7 +79,7 @@ class _TestConnectionListenNotify is TCPListenNotify
     h.expect_action("server listen")
     h.expect_action("client create")
     h.expect_action("server accept")
-    if _server_retry isnt None then
+    if not(_server_retry is None) then
       h.expect_action("server accept retry")
     end
     try
@@ -127,7 +127,7 @@ class _TestConnectionListenNotify is TCPListenNotify
       else
         _h.complete_action("server accept retry")
       end
-      if _sslctx is SSLContext then
+      if not(_sslctx is None) then
         let ssl = (_sslctx as SSLContext).server()?
         SSLConnection(consume notify, consume ssl)
       else
