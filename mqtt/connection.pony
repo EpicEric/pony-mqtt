@@ -330,14 +330,14 @@ actor MQTTConnection
 
   be _new_connection() =>
     _end_connection()
-    match _sslctx
-    | let ctx: SSLContext =>
+    if not(_sslctx is None) then
       try
+        let ssl = (_sslctx as SSLContext).client()?
         TCPConnection(
           auth,
           SSLConnection(
             _MQTTConnectionHandler(this, auth),
-            ctx.client(_sslhost)?),
+            consume ssl),
           host,
           port)
         return
