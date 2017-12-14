@@ -9,7 +9,7 @@ that might be useful for users or tests.
 #### random\_string
 
 ```pony
-fun tag random_string(
+fun random_string(
   length: USize = 8,
   letters: String = "0123456789abcdef"): String val =>
 ```
@@ -20,9 +20,18 @@ specified length with the provided characters.
 #### remaining\_length
 
 ```pony
-fun tag remaining_length(length: USize): Array[U8] val =>
+fun remaining_length(length: USize): Array[U8] val =>
 ```
 
 Receives an integer, and generates an array of bytes in the
 [format specified by the MQTT protocol](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023)
 for the "Remaining Length" field.
+
+#### join\_bytes
+
+```pony
+fun join_bytes(data: ByteSeqIter): ByteSeq iso^ =>
+```
+
+Receives a `ByteSeqIter`, and joins all chunks into a single `ByteSeq`.
+Under the hood, the return value is always an `Array[U8] iso^`.
