@@ -12,7 +12,7 @@ actor _TestConnection is TestList
 
   fun tag tests(test: PonyTest) =>
     test(_TestConnectionConnect)
-    // test(_TestConnectionConnectTLS)
+    test(_TestConnectionConnectTLS)
     test(_TestConnectionUnacceptedVersion)
     test(_TestConnectionAuthentication)
     test(_TestConnectionAuthenticationError)
