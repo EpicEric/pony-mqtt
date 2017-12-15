@@ -56,7 +56,7 @@ actor MQTTConnection
     host = host'
     port = port'
     _client = consume notify'
-    _keepalive = if keepalive' > 5 then keepalive' else 5 end
+    _keepalive = keepalive'.max(5)
     _version = version'
     _user =
       try
