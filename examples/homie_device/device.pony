@@ -10,6 +10,7 @@ actor HomieDevice
 
   More information at: https://github.com/marvinroger/homie
   """
+
   let _env: Env
   let _conn: MQTTConnection
   let _id: String

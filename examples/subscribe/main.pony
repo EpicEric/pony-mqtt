@@ -4,6 +4,7 @@ class iso MQTTSubNotify is MQTTConnectionNotify
   """
   Subscribe to the $SYS topic and print every message received.
   """
+
   let _env: Env
 
   new iso create(env: Env) =>
