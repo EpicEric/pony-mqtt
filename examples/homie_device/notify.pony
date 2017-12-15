@@ -5,6 +5,7 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
   """
   A notifier for our device.
   """
+
   let _env: Env
   let _id: String
   var _device: (HomieDevice | None) = None

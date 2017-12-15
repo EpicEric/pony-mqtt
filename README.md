@@ -13,7 +13,7 @@ Revisions are greatly appreciated, since this library likely contains bugs.
 ### Available features
 
 * Support for MQTT versions 3.1 and 3.1.1 through TCP.
-* Authentication and auto-retry connection.
+* TLS, authentication and auto-retry connection.
 * QoS for publish, subscribe, unsubscribe.
 
 ## Installation

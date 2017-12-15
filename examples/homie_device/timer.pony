@@ -4,6 +4,7 @@ class HomieTimerInterval is TimerNotify
   """
   A timer to fire control packets on a set interval.
   """
+
   let _device: HomieDevice
 
   new iso create(device: HomieDevice) =>
@@ -17,6 +18,7 @@ class HomieTimerData is TimerNotify
   """
   A timer to collect data and send packets over time.
   """
+
   let _device: HomieDevice
 
   new iso create(device: HomieDevice) =>

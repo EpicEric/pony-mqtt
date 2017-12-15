@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <linux/if_link.h>
 
-// TODO: Avoid ambient authority!
+/* TODO: Avoid ambient authority! */
 void pony_cpu_temperature(char *temp) {
 	int i;
 	char *buf;
@@ -26,7 +26,7 @@ void pony_cpu_temperature(char *temp) {
 	fclose(fp);
 }
 
-// TODO: Avoid ambient authority!
+/* TODO: Avoid ambient authority! */
 void pony_network_address(char *ip, char *mac) {
 	struct ifaddrs *ifaddr, *ifa;
 	int family, s, n, i;
