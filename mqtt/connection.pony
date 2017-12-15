@@ -150,6 +150,16 @@ actor MQTTConnection
       _client.on_disconnect(this)
     end
 
+  be _auth_failed(
+    conn: TCPConnection,
+    notify: _MQTTConnectionHandler tag)
+  =>
+    try
+      _sslctx as SSLContext
+      _client.on_error(this, MQTTErrorTLSAuthentication)
+      _end_connection(true)
+    end
+
   be _parse_packet(
     conn: TCPConnection,
     notify: _MQTTConnectionHandler tag,
@@ -342,7 +352,7 @@ actor MQTTConnection
           port)
         return
       else
-        _client.on_error(this, MQTTErrorTLS)
+        _client.on_error(this, MQTTErrorTLSConfiguration)
         return
       end
     else

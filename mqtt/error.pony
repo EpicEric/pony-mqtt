@@ -54,9 +54,13 @@ primitive MQTTErrorSocket
   fun string(): String =>
     "Connection closed by remote server"
 
-primitive MQTTErrorTLS
+primitive MQTTErrorTLSConfiguration
   fun string(): String =>
     "Invalid TLS configuration"
+
+primitive MQTTErrorTLSAuthentication
+  fun string(): String =>
+    "TLS authentication error"
 
 primitive MQTTErrorConnectProtocol
   fun string(): String =>
@@ -121,7 +125,8 @@ type MQTTError is
   | MQTTErrorConnectFailed
   | MQTTErrorSocketRetry
   | MQTTErrorSocket
-  | MQTTErrorTLS
+  | MQTTErrorTLSConfiguration
+  | MQTTErrorTLSAuthentication
   | MQTTErrorConnectProtocol
   | MQTTErrorConnectProtocolRetry
   | MQTTErrorConnectID

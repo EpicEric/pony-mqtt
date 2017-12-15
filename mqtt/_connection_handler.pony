@@ -66,6 +66,9 @@ class _MQTTConnectionHandler is TCPConnectionNotify
     end
     true
 
+  fun ref auth_failed(conn: TCPConnection ref) =>
+    _connection._auth_failed(conn, this)
+
   fun ref throttled(conn: TCPConnection ref) =>
     Backpressure.apply(_auth)
 
