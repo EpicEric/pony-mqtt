@@ -4,11 +4,12 @@ interface MQTTConnectionNotify
   for your MQTT connections.
   """
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref)
     """
     Called after successfully connecting to an MQTT broker.
+
+    This method must be implemented.
     """
-    None
 
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
     """

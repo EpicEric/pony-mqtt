@@ -1,7 +1,8 @@
 # interface MQTTConnectionNotify
 
 A user notify interface to create an event-based client class for your
-MQTT connections. It can implement any of the methods below.
+MQTT connections. It should implement the `on_connect()` and any others
+of the methods below.
 
 ## Public methods
 
@@ -14,6 +15,8 @@ fun ref on_connect(conn: MQTTConnection ref) =>
 Triggered when a connection with the server is successful.
 Receives the
 [connection instance](//classes/actor-mqttconnection.md).
+
+This method **must** be implemented by your class.
 
 #### on\_message
 
