@@ -21,7 +21,7 @@ MQTTErrorSubscribeConnected | Subscribing without a TCP connection. | |
 MQTTErrorUnsubscribeTopic | Unsubscribing with invalid topic. | No unsubscription sent. |
 MQTTErrorUnsubscribeConnected | Unsubscribing without a TCP connection. | |
 MQTTErrorPublishTopic | Publishing with invalid topic. | No publish sent. |
-MQTTErrorPublishConnected | Publishing without a TCP connection. | | |
+MQTTErrorPublishConnected | Publishing without a TCP connection. | |
 MQTTErrorConnectFailedRetry | Error when establishing TCP connection. | Attempt reconnection. |
 MQTTErrorConnectFailed | Error when establishing TCP connection. | End execution. |
 MQTTErrorSocketRetry | TCP connection closed by remote server. | Attempt reconnection. |
