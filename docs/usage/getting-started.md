@@ -16,10 +16,7 @@ Follow this guide to get started on using Pony-MQTT:
 
 * `stable fetch` to fetch your dependencies.
 
-* Write an application with `use "mqtt"` that creates a
-[MQTTConnection](//classes/actor-mqttconnection.md)
-with a class implementing
-[MQTTConnectionNotify](//classes/interface-mqttconnectionnotify.md):
+* Write an application with `use "mqtt"` that creates a [MQTTConnection](//classes/actor-mqttconnection.md) with a class implementing [MQTTConnectionNotify](//classes/interface-mqttconnectionnotify.md):
 
 ```pony
 use "mqtt"
