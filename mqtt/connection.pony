@@ -439,7 +439,7 @@ actor MQTTConnection
     msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(msg_buffer.done()))
+      (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
   fun ref _clean_timers() =>
@@ -463,7 +463,7 @@ actor MQTTConnection
     let buffer = Writer
     buffer.u16_le(0xE0)
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(buffer.done()))
+      (_conn as TCPConnection).writev(buffer.done())
       (_conn as TCPConnection).dispose()
       _end_connection()
     end
@@ -500,7 +500,7 @@ actor MQTTConnection
     msg_buffer.writev(buffer.done())
     _sub_topics.update(if id == 0 then _packet_id else id end, (topic, qos))
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(msg_buffer.done()))
+      (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
   fun ref _unsubscribe(topic: String, id: U16 = 0) =>
@@ -530,7 +530,7 @@ actor MQTTConnection
     msg_buffer.writev(buffer.done())
     _unsub_topics.update(if id == 0 then _packet_id else id end, topic)
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(msg_buffer.done()))
+      (_conn as TCPConnection).writev(msg_buffer.done())
     end
 
   fun ref _publish(packet: MQTTPacket) =>
@@ -570,7 +570,7 @@ actor MQTTConnection
     msg_buffer.write(MQTTUtils.remaining_length(buffer.size()))
     msg_buffer.writev(buffer.done())
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(msg_buffer.done()))
+      (_conn as TCPConnection).writev(msg_buffer.done())
     end
     if (packet.qos == 0) then _client.on_publish(this, packet) end
 
@@ -582,7 +582,7 @@ actor MQTTConnection
     buffer.u16_be(0x4002)
     buffer.u16_be(packet.id)
     try 
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(buffer.done()))
+      (_conn as TCPConnection).writev(buffer.done())
     end
 
   fun ref _pubrec(packet: MQTTPacket) =>
@@ -594,7 +594,7 @@ actor MQTTConnection
     buffer.u16_be(packet.id)
     _received_packets.update(packet.id, packet)
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(buffer.done()))
+      (_conn as TCPConnection).writev(buffer.done())
     end
 
   fun ref _pubrel(packet: MQTTPacket) =>
@@ -606,7 +606,7 @@ actor MQTTConnection
     buffer.u16_be(packet.id)
     _confirmed_packets.update(packet.id, packet)
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(buffer.done()))
+      (_conn as TCPConnection).writev(buffer.done())
     end
 
   fun ref _pubcomp(packet: MQTTPacket) =>
@@ -617,7 +617,7 @@ actor MQTTConnection
     buffer.u16_be(0x7002)
     buffer.u16_be(packet.id)
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(buffer.done()))
+      (_conn as TCPConnection).writev(buffer.done())
     end
 
   fun ref _ping() =>
@@ -630,7 +630,7 @@ actor MQTTConnection
     let buffer = Writer
     buffer.u16_le(0xC0)
     try
-      (_conn as TCPConnection).write(MQTTUtils.join_bytes(buffer.done()))
+      (_conn as TCPConnection).writev(buffer.done())
     end
 
   be _send_ping() =>

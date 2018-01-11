@@ -183,6 +183,7 @@ class _TestConnectionConnectServer is TCPConnectionNotify
     times: USize)
     : Bool
   =>
+    if times > 1 then return true end
     let buffer: Array[U8] val = consume data
     try
       _h.assert_eq[U8](buffer(0)?, 0x10)

@@ -50,20 +50,3 @@ primitive MQTTUtils
       buffer.push(byte)
     until length' == 0 end
     buffer
-
-  fun join_bytes(data: ByteSeqIter): ByteSeq iso^ =>
-    """
-    Receives a ByteSeqIter and joins all chunks into a single ByteSeq.
-    """
-    recover
-      let join_data = Array[U8]
-      for chunk in data.values() do
-        match chunk
-        | let c: String =>
-          join_data.append(c.array())
-        | let c: Array[U8] val =>
-          join_data.append(c)
-        end
-      end
-      join_data
-    end
