@@ -203,7 +203,7 @@ class iso _TestConnectionConnectTLS is UnitTest
   """
 
   fun name(): String =>
-    "MQTT/Connection/ConnectTSL"
+    "MQTT/Connection/ConnectTLS"
 
   fun label(): String =>
     "connection"

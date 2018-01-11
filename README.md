@@ -4,7 +4,7 @@ A notify-based implementation of an MQTT client written in the [Pony language](h
 
 ## Status
 
-[![Build Status](https://travis-ci.org/EpicEric/pony-mqtt.svg?branch=master)](https://travis-ci.org/EpicEric/pony-mqtt)
+[![CircleCI](https://circleci.com/gh/EpicEric/pony-mqtt.svg?style=svg)](https://circleci.com/gh/EpicEric/pony-mqtt)
 
 Pony MQTT is in alpha version, which means breaking changes are expected. Revisions are greatly appreciated, since this library likely contains bugs.
 

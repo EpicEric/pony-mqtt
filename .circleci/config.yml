@@ -1,0 +1,37 @@
+version: 2
+jobs:
+  vs-ponyc-release:
+    docker:
+      - image: ponylang/ponyc:release
+    steps:
+      - checkout
+      - run: make test
+      - run: make --directory=examples/hello_world
+      - run: make --directory=examples/homie_device
+      - run: make --directory=examples/subscribe
+      - run: make --directory=examples/tls
+  vs-ponyc-master:
+    docker:
+      - image: ponylang/ponyc:latest
+    steps:
+      - checkout
+      - run: make test
+      - run: make --directory=examples/hello_world
+      - run: make --directory=examples/homie_device
+      - run: make --directory=examples/subscribe
+      - run: make --directory=examples/tls
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - vs-ponyc-release
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only: master
+    jobs:
+      - vs-ponyc-master
