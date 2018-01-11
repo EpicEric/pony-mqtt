@@ -1,7 +1,7 @@
 build/hello_world: build .deps *.pony
 	stable env ponyc -o build --debug
 
-.deps: bundle.json *.pony
+.deps: bundle.json
 	stable fetch
 
 build:

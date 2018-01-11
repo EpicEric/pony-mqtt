@@ -4,7 +4,7 @@ build/homie_device: build .deps *.pony lib/libffi-sensor.so
 build:
 	mkdir build
 
-.deps: bundle.json *.pony
+.deps: bundle.json
 	stable fetch
 
 lib:

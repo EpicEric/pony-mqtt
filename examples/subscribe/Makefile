@@ -1,7 +1,7 @@
 build/subscribe: build .deps *.pony
 	stable env ponyc -o build --debug
 
-.deps: bundle.json *.pony
+.deps: bundle.json
 	stable fetch
 
 build:
