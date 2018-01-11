@@ -2,7 +2,7 @@
   "deps": [
     {
       "type": "local",
-      "local-path": "../../../pony-mqtt"
+      "local-path": "../.."
     }
   ]
 }
