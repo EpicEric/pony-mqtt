@@ -183,7 +183,6 @@ class _TestConnectionConnectServer is TCPConnectionNotify
     times: USize)
     : Bool
   =>
-    if times > 1 then return true end
     let buffer: Array[U8] val = consume data
     try
       _h.assert_eq[U8](buffer(0)?, 0x10)
@@ -248,9 +247,36 @@ class iso _TestConnectionConnectTLS is UnitTest
       end
     _TestConnectionListenNotify(h)(
       _TestConnectionConnectClient(h),
-      _TestConnectionConnectServer(h)
+      _TestConnectionConnectTLSServer(h)
       where sslctx = sslctx,
       sslhost = "")
+
+class _TestConnectionConnectTLSServer is TCPConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref received(
+    conn: TCPConnection ref,
+    data: Array[U8] iso,
+    times: USize)
+    : Bool
+  =>
+    // TODO: Properly rebuild TLS message
+    let buffer: Array[U8] val = consume data
+    try
+      if buffer(0)? == 0x10 then
+        _h.complete_action("mqtt connect")
+        conn.write([ 0x20; 0x02; 0x00; 0x00 ])
+      end
+    else
+      _h.fail_action("mqtt connect")
+    end
+    true
+
+  fun ref connect_failed(conn: TCPConnection ref) =>
+    _h.fail_action("mqtt connect")
 
 class iso _TestConnectionUnacceptedVersion is UnitTest
   """

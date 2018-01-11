@@ -5,7 +5,6 @@ build:
 	mkdir build
 
 .deps: bundle.json *.pony
-	rm -rf .deps
 	stable fetch
 
 lib:
@@ -15,9 +14,12 @@ lib/libffi-sensor.so: lib sensor.c
 	gcc -c -Wall -Werror -fpic -o lib/sensor.o sensor.c
 	gcc -shared -o lib/libffi-sensor.so lib/sensor.o
 
+run: build/homie_device
+	build/homie_device
+
 clean:
 	rm -rf .deps
 	rm -rf build
 	rm -rf lib
 
-.PHONY: clean
+.PHONY: clean run
