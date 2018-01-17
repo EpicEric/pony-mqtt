@@ -17,6 +17,8 @@ actor _TestConnection is TestList
     test(_TestConnectionAuthentication)
     test(_TestConnectionAuthenticationError)
     test(_TestConnectionWillPacket)
+    test(_TestConnectionCleanSession)
+    test(_TestConnectionNoCleanSession)
     test(_TestConnectionPublishSend)
     test(_TestConnectionPublishReceive)
     test(_TestConnectionSubscribe)
@@ -39,6 +41,7 @@ class _TestConnectionListenNotify is TCPListenNotify
   var _sslhost: String = ""
   var _version: MQTTVersion = MQTTv311
   var _retry_connection: U64 = 0
+  var _clean_session: Bool = true
   var _will_packet: (MQTTPacket | None) = None
   var _client_id: String = ""
   var _user: (String | None) = None
@@ -56,6 +59,7 @@ class _TestConnectionListenNotify is TCPListenNotify
     sslhost: String = "",
     version: MQTTVersion = MQTTv311,
     retry_connection: U64 = 0,
+    clean_session: Bool = true,
     will_packet: (MQTTPacket | None) = None,
     client_id: String = "",
     user: (String | None) = None,
@@ -70,6 +74,7 @@ class _TestConnectionListenNotify is TCPListenNotify
     _sslhost = sslhost
     _version = version
     _retry_connection = retry_connection
+    _clean_session = clean_session
     _will_packet = will_packet
     _client_id = client_id
     _user = user
@@ -107,6 +112,7 @@ class _TestConnectionListenNotify is TCPListenNotify
         _keepalive,
         _version,
         _retry_connection,
+        _clean_session,
         _sslctx,
         _sslhost,
         _will_packet,
@@ -165,7 +171,7 @@ class _TestConnectionConnectClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
 
   fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
@@ -313,7 +319,7 @@ class _TestConnectionUnacceptedVersionClient is MQTTConnectionNotify
     _h = h
     _first_try = true
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.assert_false(_first_try)
     _h.complete_action("mqtt connack good")
 
@@ -489,7 +495,7 @@ class _TestConnectionAuthenticationErrorClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.fail_action("mqtt connack bad")
 
   fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
@@ -605,6 +611,141 @@ class _TestConnectionWillPacketServer is TCPConnectionNotify
   fun ref connect_failed(conn: TCPConnection ref) =>
     _h.fail_action("mqtt connect")
 
+class iso _TestConnectionCleanSession is UnitTest
+  fun name(): String =>
+    "MQTT/Connection/CleanSession"
+
+  fun label(): String =>
+    "connection"
+
+  fun exclusion_group(): String =>
+    "network"
+
+  fun ref apply(h: TestHelper) =>
+    h.expect_action("mqtt connect")
+    h.expect_action("mqtt connack")
+    _TestConnectionListenNotify(h)(
+      _TestConnectionCleanSessionClient(h),
+      _TestConnectionCleanSessionServer(h)
+      where clean_session = true,
+      client_id = "00000000",
+      version = MQTTv311)
+
+class _TestConnectionCleanSessionClient is MQTTConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+    if not session_present then
+      _h.complete_action("mqtt connack")
+    else
+      _h.fail_action("mqtt connack")
+    end
+
+  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+    _h.fail_action("mqtt connack")
+
+class _TestConnectionCleanSessionServer is TCPConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref received(
+    conn: TCPConnection ref,
+    data: Array[U8] iso,
+    times: USize)
+    : Bool
+  =>
+    var buffer: Array[U8] val = consume data
+    try
+      _h.assert_eq[U8](buffer(0)?, 0x10)
+      var version_pos: USize = 1
+      while (buffer(version_pos)? and 0x80) == 0x80 do
+        version_pos = version_pos + 1
+      end
+      version_pos = version_pos + 1
+      buffer = buffer.trim(version_pos + 7) // Remove everything prior to flags
+      _h.assert_eq[U8](buffer(0)? and 0x02, 0x02) // Check Clean Session flag
+      _h.complete_action("mqtt connect")
+      conn.write([ 0x20; 0x02; 0x00; 0x00 ])
+    else
+      _h.fail_action("mqtt connect")
+    end
+    true
+
+  fun ref connect_failed(conn: TCPConnection ref) =>
+    _h.fail_action("mqtt connect")
+
+class iso _TestConnectionNoCleanSession is UnitTest
+  fun name(): String =>
+    "MQTT/Connection/NoCleanSession"
+
+  fun label(): String =>
+    "connection"
+
+  fun exclusion_group(): String =>
+    "network"
+
+  fun ref apply(h: TestHelper) =>
+    h.expect_action("mqtt connect")
+    h.expect_action("mqtt connack")
+    _TestConnectionListenNotify(h)(
+      _TestConnectionNoCleanSessionClient(h),
+      _TestConnectionNoCleanSessionServer(h)
+      where clean_session = false,
+      client_id = "00000000",
+      version = MQTTv311)
+
+class _TestConnectionNoCleanSessionClient is MQTTConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+    if session_present then
+      _h.complete_action("mqtt connack")
+    else
+      _h.fail_action("mqtt connack")
+    end
+
+  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+    _h.fail_action("mqtt connack")
+
+class _TestConnectionNoCleanSessionServer is TCPConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref received(
+    conn: TCPConnection ref,
+    data: Array[U8] iso,
+    times: USize)
+    : Bool
+  =>
+    var buffer: Array[U8] val = consume data
+    try
+      _h.assert_eq[U8](buffer(0)?, 0x10)
+      var version_pos: USize = 1
+      while (buffer(version_pos)? and 0x80) == 0x80 do
+        version_pos = version_pos + 1
+      end
+      version_pos = version_pos + 1
+      buffer = buffer.trim(version_pos + 7) // Remove everything prior to flags
+      _h.assert_eq[U8](buffer(0)? and 0x02, 0x00) // Check Clean Session flag
+      _h.complete_action("mqtt connect")
+      conn.write([ 0x20; 0x02; 0x01; 0x00 ])
+    else
+      _h.fail_action("mqtt connect")
+    end
+    true
+
+  fun ref connect_failed(conn: TCPConnection ref) =>
+    _h.fail_action("mqtt connect")
 
 class iso _TestConnectionPublishSend is UnitTest
   fun name(): String =>
@@ -631,7 +772,7 @@ class _TestConnectionPublishSendClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
     conn.publish(MQTTPacket("$pony/set", "My test".array(), true, 0))
 
@@ -721,7 +862,7 @@ class _TestConnectionPublishReceiveClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
 
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
@@ -788,7 +929,7 @@ class _TestConnectionSubscribeClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
     conn.subscribe("$pony/#", 1)
 
@@ -877,7 +1018,7 @@ class _TestConnectionUnsubscribeClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
     conn.unsubscribe("$pony/#")
 
@@ -965,7 +1106,7 @@ class _TestConnectionDisconnectClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
     conn.disconnect()
 
@@ -1037,7 +1178,7 @@ class _TestConnectionPingClient is MQTTConnectionNotify
   new iso create(h: TestHelper) =>
     _h = h
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
 
   fun ref on_ping(conn: MQTTConnection ref) =>

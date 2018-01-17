@@ -57,6 +57,8 @@ The arguments are:
 
 * `retry_connection'`: When the connection is closed by the server or due to a client error, attempt to reconnect at the specified interval in seconds. A value of zero means no reattempt will be made. Default is `0`.
 
+* `clean_session'`: Controls whether the broker should not store [a persistent session](https://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages) for this connection. Sessions for a same client are identified by the `client_id'` parameter. Default is `true`.
+
 * `sslctx'`: An SSLContext object, with client and certificate authority set appropriately, used when connecting to a TLS port in a broker. A value of `None` means no security will be implemented over the socket. Default is `None`.
 
 * `sslhost'`: A String representing a host for signed certificates. If the hostname isn't part of the certificate, leave it blank. Default is `""`.

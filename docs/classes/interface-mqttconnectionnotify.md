@@ -7,10 +7,10 @@ A user notify interface to create an event-based client class for your MQTT conn
 #### on\_connect
 
 ```pony
-fun ref on_connect(conn: MQTTConnection ref) =>
+fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
 ```
 
-Triggered when a connection with the server is successful. Receives the [connection instance](//classes/actor-mqttconnection.md).
+Triggered when a connection with the server is successful. Receives the [connection instance](//classes/actor-mqttconnection.md) and if [a session](https://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages) is available in the broker.
 
 This method **must** be implemented by your class.
 

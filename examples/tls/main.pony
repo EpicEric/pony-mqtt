@@ -12,7 +12,7 @@ class iso MQTTTLSNotify is MQTTConnectionNotify
   new iso create(env: Env) =>
     _env = env
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _env.out.print("Success.")
     conn.disconnect()
   

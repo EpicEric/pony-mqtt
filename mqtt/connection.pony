@@ -21,6 +21,7 @@ actor MQTTConnection
   let _user: (String | None)
   let _pass: (String | None)
   let _retry_connection: Bool
+  let _clean_session: Bool
   let _sslctx: (SSLContext | None)
   let _sslhost: String
   let _will_packet: (MQTTPacket | None)
@@ -51,6 +52,7 @@ actor MQTTConnection
     keepalive': U16 = 15,
     version': MQTTVersion = MQTTv311,
     retry_connection': U64 = 0,
+    clean_session': Bool = true,
     sslctx': (SSLContext | None) = None,
     sslhost': String = "",
     will_packet': (MQTTPacket | None) = None,
@@ -79,6 +81,7 @@ actor MQTTConnection
       _retry_connection = false
       _reconnect_time = 0
     end
+    _clean_session = clean_session'
     _sslctx = sslctx'
     _sslhost = sslhost'
     _will_packet =
@@ -189,7 +192,7 @@ actor MQTTConnection
             _MQTTResendTimer(this), _resend_time, _resend_time)
           _ping_timer = ping_timer
           _timers(consume ping_timer)
-          _client.on_connect(this)
+          _client.on_connect(this, buffer.peek_u8(2)? == 0x01)
         | 1 =>
           if _retry_connection and not(_version is MQTTv31) then
             _client.on_error(this, MQTTErrorConnectProtocolRetry)
@@ -385,7 +388,11 @@ actor MQTTConnection
     )
     // Flags
     buffer.u8(
-      0x02 or
+      if _clean_session then
+        0x02
+      else
+        0x00
+      end or
       try
         let user = _user as String
         0x80 or

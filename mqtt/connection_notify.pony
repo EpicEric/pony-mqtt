@@ -4,7 +4,7 @@ interface MQTTConnectionNotify
   for your MQTT connections.
   """
 
-  fun ref on_connect(conn: MQTTConnection ref)
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool)
     """
     Called after successfully connecting to an MQTT broker.
 

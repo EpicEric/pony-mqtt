@@ -14,7 +14,7 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     _env = env
     _id = id
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _env.out.print(
       "[" +
       get_date() +

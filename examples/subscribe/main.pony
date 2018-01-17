@@ -10,7 +10,7 @@ class iso MQTTSubNotify is MQTTConnectionNotify
   new iso create(env: Env) =>
     _env = env
 
-  fun ref on_connect(conn: MQTTConnection ref) =>
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     """
     Subscribe to $SYS/# topic upon connecting.
     """
