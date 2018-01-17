@@ -22,7 +22,11 @@ Follow this guide to get started on using Pony-MQTT:
 use "mqtt"
 
 class iso MyNotify is MQTTConnectionNotify
-  // ... Add declarations and methods here
+  new iso create(...) =>
+    // ...
+
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+    // ...
 
 actor Main
   new create(env: Env) =>
