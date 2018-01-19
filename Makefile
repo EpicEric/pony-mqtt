@@ -1,5 +1,5 @@
-build/mqtt: build mqtt/*.pony
-	ponyc mqtt -o build --debug
+build/mqtt: build mqtt/*.pony mqtt/test/*.pony
+	ponyc mqtt/test -o build -b mqtt --debug
 
 build:
 	mkdir build

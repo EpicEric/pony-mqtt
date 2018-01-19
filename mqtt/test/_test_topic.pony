@@ -1,5 +1,7 @@
 use "ponytest"
 
+use ".."
+
 actor _TestTopic is TestList
   """
   Unit tests that verify the functionality of the methods in the MQTTTopic

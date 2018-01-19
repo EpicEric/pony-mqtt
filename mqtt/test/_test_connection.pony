@@ -4,6 +4,8 @@ use "net"
 use "net/ssl"
 use "ponytest"
 
+use ".."
+
 actor _TestConnection is TestList
   """
   Integration tests that verify different functionalities of the
@@ -221,13 +223,13 @@ class iso _TestConnectionConnectTLS is UnitTest
     h.expect_action("mqtt connack")
     let auth = h.env.root as AmbientAuth
     let cert: FilePath = try
-      FilePath(auth, "./mqtt/_test/cert.pem")?
+      FilePath(auth, "./mqtt/test/cert.pem")?
     else
       h.fail("cert.pem")
       error
     end
     let key: FilePath = try
-      FilePath(auth, "./mqtt/_test/key.pem")?
+      FilePath(auth, "./mqtt/test/key.pem")?
     else
       h.fail("key.pem")
       error
