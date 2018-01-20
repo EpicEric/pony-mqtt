@@ -27,6 +27,7 @@ actor _TestConnection is TestList
     test(_TestConnectionUnsubscribe)
     test(_TestConnectionDisconnect)
     test(_TestConnectionPing)
+    test(_TestConnectionReconstructMessage)
 
 class _TestConnectionListenNotify is TCPListenNotify
   """
@@ -895,8 +896,8 @@ class _TestConnectionPublishReceiveServer is TCPConnectionNotify
       _h.complete_action("mqtt connect")
       conn.write([ 0x20; 0x02; 0x00; 0x00 ])
       conn.write(
-        [ 0x31; 0x12; 0x00; 0x09; 0x24; 0x70; 0x6f; 0x6e; 0x79; 0x2f
-          0x73; 0x65; 0x74; 0x4d; 0x79; 0x20; 0x74; 0x65; 0x73; 0x74 ]
+        [ 0x31; 0x12; 0x00; 0x09; '$'; 'p'; 'o'; 'n'; 'y'; '/'
+          's'; 'e'; 't'; 'M'; 'y'; ' '; 't'; 'e'; 's'; 't' ]
       )
     else
       _h.fail_action("mqtt connect")
@@ -1216,6 +1217,105 @@ class _TestConnectionPingServer is TCPConnectionNotify
     else
       _h.fail_action("mqtt connect")
       _h.fail_action("mqtt pingreq")
+    end
+    true
+
+  fun ref connect_failed(conn: TCPConnection ref) =>
+    _h.fail_action("mqtt connect")
+
+class iso _TestConnectionReconstructMessage is UnitTest
+  fun name(): String =>
+    "MQTT/Connection/ReconstructMessage"
+
+  fun label(): String =>
+    "connection"
+
+  fun exclusion_group(): String =>
+    "network"
+
+  fun ref apply(h: TestHelper) =>
+    h.expect_action("mqtt connect")
+    h.expect_action("mqtt connack")
+    h.expect_action("mqtt subscribe")
+    h.expect_action("mqtt suback")
+    h.expect_action("mqtt publish 1")
+    h.expect_action("mqtt publish 2")
+    _TestConnectionListenNotify(h)(
+      _TestConnectionReconstructMessageClient(h),
+      _TestConnectionReconstructMessageServer(h))
+
+class _TestConnectionReconstructMessageClient is MQTTConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+    _h.complete_action("mqtt connack")
+    conn.subscribe("#")
+
+  fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
+    _h.complete_action("mqtt suback")
+
+  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
+    match packet.topic
+    | "publish/1" =>
+      _h.complete_action("mqtt publish 1")
+    | "publish/2" =>
+      _h.complete_action("mqtt publish 2")
+    else
+      _h.fail("mqtt publish")
+    end
+
+  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+    _h.fail_action("mqtt connack")
+
+class _TestConnectionReconstructMessageServer is TCPConnectionNotify
+  let _h: TestHelper
+
+  new iso create(h: TestHelper) =>
+    _h = h
+
+  fun ref received(
+    conn: TCPConnection ref,
+    data: Array[U8] iso,
+    times: USize)
+    : Bool
+  =>
+    let buffer: Array[U8] val = consume data
+    try
+      match buffer(0)?
+      | 0x10 =>
+        _h.complete_action("mqtt connect")
+        conn.write([ 0x20; 0x02; 0x00; 0x00 ])
+      | 0x82 =>
+        var version_pos: USize = 1
+        while (buffer(version_pos)? and 0x80) == 0x80 do
+          version_pos = version_pos + 1
+        end
+        version_pos = version_pos + 1
+        let packet_id_msb: U8 = buffer(version_pos)?
+        let packet_id_lsb: U8 = buffer(version_pos + 1)?
+        _h.complete_action("mqtt subscribe")
+        conn.write(
+          [ // Subscribe
+            0x90; 0x03; packet_id_msb; packet_id_lsb; 0x00
+            // Part 1/2 of Publish 1
+            0x31; 0x0B; 0x00; 0x09; 'p'; 'u'; 'b'; 'l'; 'i'; 's'; 'h' ]
+        )
+        conn.write(
+          [ // Part 2/2 of Publish 1
+            '/'; '1'
+            // Publish 2
+            0x31; 0x0B; 0x00; 0x09; 'p'; 'u'
+            'b'; 'l'; 'i'; 's'; 'h'; '/'; '2' ]
+        )
+      else
+        _h.fail("unknown packet")
+      end
+    else
+      _h.fail_action("mqtt connect")
+      _h.fail_action("mqtt subscribe")
     end
     true
 
