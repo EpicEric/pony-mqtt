@@ -1,5 +1,6 @@
 @echo off
 set TARGET=mqtt
+set TARGET_DIR=%TARGET%\test
 
 if "%1"=="help" goto usage
 if "%1"=="--help" goto usage
@@ -35,19 +36,19 @@ if "%1"=="fetch" goto fetch
 :build
 if not exist "%BUILDDIR%" mkdir "%BUILDDIR%""
 if not exist "VERSION" goto noversion
-if not exist %TARGET%\version.pony.in goto noversion
+if not exist %TARGET_DIR%\version.pony.in goto noversion
 set /p VERSION=<VERSION
 if exist ".git" for /f %%i in ('git rev-parse --short HEAD') do set "VERSION=%VERSION%-%%i [%CONFIG%]"
 if not exist ".git" set "VERSION=%VERSION% [%CONFIG%]"
 setlocal enableextensions disabledelayedexpansion
-for /f "delims=" %%i in ('type %TARGET%\version.pony.in ^& break ^> %TARGET%\version.pony') do (
+for /f "delims=" %%i in ('type %TARGET_DIR%\version.pony.in ^& break ^> %TARGET_DIR%\version.pony') do (
   set "line=%%i"
   setlocal enabledelayedexpansion
-  >>%TARGET%\version.pony echo(!line:%%%%VERSION%%%%=%VERSION%!
+  >>%TARGET_DIR%\version.pony echo(!line:%%%%VERSION%%%%=%VERSION%!
   endlocal
 )
 :noversion
-stable env ponyc %DEBUG% -o %BUILDDIR% %TARGET%
+stable env ponyc %DEBUG% -o %BUILDDIR% -b %TARGET% %TARGET_DIR%
 if errorlevel 1 goto error
 goto done
 
@@ -59,7 +60,7 @@ goto done
 :test
 if not exist %BUILDDIR%\%TARGET%.exe (
   stable fetch
-  stable env ponyc %DEBUG% -o %BUILDDIR% %TARGET%
+  stable env ponyc %DEBUG% -o %BUILDDIR% -b %TARGET% %TARGET_DIR%
 )
 if errorlevel 1 goto error
 %BUILDDIR%\%TARGET%.exe --sequential
