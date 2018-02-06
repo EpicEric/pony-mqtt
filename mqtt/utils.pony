@@ -16,7 +16,7 @@ primitive MQTTUtils
     """
     recover
       let length': USize =
-        if (length == 0) or (length >= 24) then
+        if (length == 0) or (length > 23) then
           8
         else length end
       var string = String(length')

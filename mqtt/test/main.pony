@@ -7,3 +7,4 @@ actor Main is TestList
   fun tag tests(test: PonyTest) =>
     _TestConnection.tests(test)
     _TestTopic.tests(test)
+    _TestUtils.tests(test)
