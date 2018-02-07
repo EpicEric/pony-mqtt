@@ -121,8 +121,7 @@ class _TestConnectionListenNotify is TCPListenNotify
         _will_packet,
         _client_id,
         _user,
-        _pass
-      ))
+        _pass))
       _h.complete_action("client create")
     else
       _h.fail_action("client create")
@@ -182,6 +181,7 @@ class _TestConnectionConnectClient is MQTTConnectionNotify
 
 class _TestConnectionConnectServer is TCPConnectionNotify
   let _h: TestHelper
+  let _data_buffer: Array[U8] = Array[U8]
 
   new iso create(h: TestHelper) =>
     _h = h
@@ -192,13 +192,19 @@ class _TestConnectionConnectServer is TCPConnectionNotify
     times: USize)
     : Bool
   =>
-    let buffer: Array[U8] val = consume data
-    try
-      _h.assert_eq[U8](buffer(0)?, 0x10)
-      _h.complete_action("mqtt connect")
-      conn.write([ 0x20; 0x02; 0x00; 0x00 ])
-    else
-      _h.fail_action("mqtt connect")
+    _data_buffer.append(consume data)
+    while _data_buffer.size() >= 2 do
+      try
+        let size = _data_buffer(1)?.usize()
+        if size <= _data_buffer.size() then
+          _h.assert_eq[U8](_data_buffer(0)?, 0x10)
+          _data_buffer.trim_in_place(size)
+          _h.complete_action("mqtt connect")
+          conn.write([ 0x20; 0x02; 0x00; 0x00 ])
+        else break end
+      else
+        _h.fail_action("mqtt connect")
+      end
     end
     true
 
@@ -256,40 +262,9 @@ class iso _TestConnectionConnectTLS is UnitTest
       end
     _TestConnectionListenNotify(h)(
       _TestConnectionConnectClient(h),
-      _TestConnectionConnectTLSServer(h)
+      _TestConnectionConnectServer(h)
       where sslctx = sslctx,
       sslhost = "")
-
-class _TestConnectionConnectTLSServer is TCPConnectionNotify
-  let _h: TestHelper
-  var _connected: Bool = false
-
-  new iso create(h: TestHelper) =>
-    _h = h
-
-  fun ref received(
-    conn: TCPConnection ref,
-    data: Array[U8] iso,
-    times: USize)
-    : Bool
-  =>
-    if not(_connected) then
-      // TODO: Properly rebuild TLS message
-      let buffer: Array[U8] val = consume data
-      try
-        if buffer(0)? == 0x10 then
-          _connected = true
-          _h.complete_action("mqtt connect")
-          conn.write([ 0x20; 0x02; 0x00; 0x00 ])
-        end
-      else
-        _h.fail_action("mqtt connect")
-      end
-    end
-    true
-
-  fun ref connect_failed(conn: TCPConnection ref) =>
-    _h.fail_action("mqtt connect")
 
 class iso _TestConnectionUnacceptedVersion is UnitTest
   """
