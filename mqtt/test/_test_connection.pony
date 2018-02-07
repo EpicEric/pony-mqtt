@@ -207,7 +207,7 @@ class _TestConnectionConnectServer is TCPConnectionNotify
 
 class iso _TestConnectionConnectTLS is UnitTest
   """
-  Attempt a TSL connection to an MQTT server.
+  Attempt a TLS connection to an MQTT server.
   """
 
   fun name(): String =>
@@ -262,6 +262,7 @@ class iso _TestConnectionConnectTLS is UnitTest
 
 class _TestConnectionConnectTLSServer is TCPConnectionNotify
   let _h: TestHelper
+  var _connected: Bool = false
 
   new iso create(h: TestHelper) =>
     _h = h
@@ -272,15 +273,18 @@ class _TestConnectionConnectTLSServer is TCPConnectionNotify
     times: USize)
     : Bool
   =>
-    // TODO: Properly rebuild TLS message
-    let buffer: Array[U8] val = consume data
-    try
-      if buffer(0)? == 0x10 then
-        _h.complete_action("mqtt connect")
-        conn.write([ 0x20; 0x02; 0x00; 0x00 ])
+    if not(_connected) then
+      // TODO: Properly rebuild TLS message
+      let buffer: Array[U8] val = consume data
+      try
+        if buffer(0)? == 0x10 then
+          _connected = true
+          _h.complete_action("mqtt connect")
+          conn.write([ 0x20; 0x02; 0x00; 0x00 ])
+        end
+      else
+        _h.fail_action("mqtt connect")
       end
-    else
-      _h.fail_action("mqtt connect")
     end
     true
 
