@@ -64,7 +64,7 @@ actor MQTTConnection
     host = host'
     port = port'
     _client = consume notify'
-    _keepalive = keepalive'.max(5)
+    _keepalive = keepalive'
     _version = version'
     _user =
       try
@@ -101,7 +101,12 @@ actor MQTTConnection
       else
         MQTTUtils.random_string() 
       end
-    _ping_time = 750_000_000 * _keepalive.u64()
+    _ping_time =
+      if _keepalive > 0 then
+        750_000_000 * _keepalive.u64()
+      else
+        30_000_000_000
+      end
     _resend_time = 1_000_000_000
     _update_version(version')
     _new_connection()

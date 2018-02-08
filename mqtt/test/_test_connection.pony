@@ -66,8 +66,7 @@ class _TestConnectionListenNotify is TCPListenNotify
     will_packet: (MQTTPacket | None) = None,
     client_id: String = "",
     user: (String | None) = None,
-    pass: (String | None) = None,
-    long_test: U64 = 2_000_000_000)
+    pass: (String | None) = None)
   =>
     _client = consume client
     _server = consume server
@@ -97,7 +96,7 @@ class _TestConnectionListenNotify is TCPListenNotify
     else
       h.fail_action("server create")
     end
-    h.long_test(long_test.max(2_000_000_000))
+    h.long_test(2_000_000_000)
 
   fun ref not_listening(listen: TCPListener ref) =>
     _h.fail_action("server listen")
@@ -1151,8 +1150,7 @@ class iso _TestConnectionPing is UnitTest
     _TestConnectionListenNotify(h)(
       _TestConnectionPingClient(h),
       _TestConnectionPingServer(h)
-      where keepalive = 5,
-      long_test = 5_000_000_000)
+      where keepalive = 1)
 
 class _TestConnectionPingClient is MQTTConnectionNotify
   let _h: TestHelper

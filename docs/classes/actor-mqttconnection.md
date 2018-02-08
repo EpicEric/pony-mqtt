@@ -51,7 +51,7 @@ The arguments are:
 
 * `port'`: The port for the MQTT service. By default, most brokers use port `1883`.
 
-* `keepalive'`: Duration in seconds for the keepalive mechanism. Default is `15`. The minimum is 5 seconds.
+* `keepalive'`: Duration in seconds for the keepalive mechanism. If set to `0`, the keepalive mechanism is disabled, but ping messages will still be sent once in a while to avoid inactivity. Default is `15`.
 
 * `version'`: The [version](//classes/type-mqttversion.md) of the communication protocol. By default, it uses the fourth release of the protocol, version 3.1.1.
 
