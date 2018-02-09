@@ -43,6 +43,8 @@ actor MQTTConnection
   var _ping_timer: (Timer tag | None) = None
   var _resend_timer: (Timer tag | None) = None
   var _reconnect_timer: (Timer tag | None) = None
+  var _local_address: (NetAddress | None) = None
+  var _remote_address: (NetAddress | None) = None
 
   new create(
     auth': AmbientAuth,
@@ -113,9 +115,13 @@ actor MQTTConnection
 
   be _connected(
     conn: TCPConnection,
-    notify: _MQTTConnectionHandler tag)
+    notify: _MQTTConnectionHandler tag,
+    local_address': NetAddress,
+    remote_address': NetAddress)
   =>
     _end_connection(false)
+    _local_address = local_address'
+    _remote_address = remote_address'
     try
       _timers.cancel(_reconnect_timer as Timer tag)
     end
@@ -336,6 +342,8 @@ actor MQTTConnection
     _confirmed_packets.clear()
     _sub_topics.clear()
     _unsub_topics.clear()
+    _local_address = None
+    _remote_address = None
 
   fun ref _update_version(version: MQTTVersion) =>
     _version = version
@@ -712,3 +720,9 @@ actor MQTTConnection
     Disposes of this connection.
     """
     _end_connection(true)
+
+  fun local_address(): (NetAddress | None) =>
+    _local_address
+
+  fun remote_address(): (NetAddress | None) =>
+    _remote_address

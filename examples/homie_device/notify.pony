@@ -1,4 +1,5 @@
 use "mqtt"
+use "net"
 use "time"
 
 class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
@@ -15,14 +16,25 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     _id = id
 
   fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
-    _env.out.print(
-      "[" +
-      get_date() +
-      "] Connected.")
-    try
-        (_device as HomieDevice).restart()
-    else
-      _device = HomieDevice(_env, conn, _id)
+    match _device
+    | None =>
+      _env.out.print(
+        "[" +
+        get_date() +
+        "] Connected.")
+      let host = 
+        try
+          (conn.local_address() as NetAddress).name()?._1
+        else
+          "unknown"
+        end
+      _device = HomieDevice(_env, conn, _id, host)
+    | let d: HomieDevice =>
+      _env.out.print(
+        "[" +
+        get_date() +
+        "] Reconnected.")
+      d.restart(session_present)
     end
 
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
@@ -32,7 +44,7 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     conn: MQTTConnection ref, err: MQTTError, info: String)
   =>
     _env.out.print(
-      "[" +
+      "<ERROR> [" +
       get_date() +
       "] " +
       err.string())

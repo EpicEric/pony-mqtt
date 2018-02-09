@@ -16,7 +16,8 @@ class _MQTTConnectionHandler is TCPConnectionNotify
     _auth = auth
 
   fun ref connected(conn: TCPConnection ref) =>
-    _connection._connected(conn, this)
+    _connection._connected(
+      conn, this, conn.local_address(), conn.remote_address())
 
   fun ref connect_failed(conn: TCPConnection ref) =>
     _connection._connect_failed(conn, this)
