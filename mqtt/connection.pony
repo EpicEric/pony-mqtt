@@ -115,7 +115,6 @@ actor MQTTConnection
 
   be _connected(
     conn: TCPConnection,
-    notify: _MQTTConnectionHandler tag,
     local_address': NetAddress,
     remote_address': NetAddress)
   =>
@@ -130,8 +129,7 @@ actor MQTTConnection
     _connect()
 
   be _connect_failed(
-    conn: TCPConnection,
-    notify: _MQTTConnectionHandler tag)
+    conn: TCPConnection)
   =>
     if _is_connected and _retry_connection then
       _client.on_error(this, MQTTErrorConnectFailedRetry)
@@ -145,8 +143,7 @@ actor MQTTConnection
     end
 
   be _closed(
-    conn: TCPConnection,
-    notify: _MQTTConnectionHandler tag)
+    conn: TCPConnection)
   =>
     if _is_connected then
       if _retry_connection then
@@ -165,8 +162,7 @@ actor MQTTConnection
     end
 
   be _auth_failed(
-    conn: TCPConnection,
-    notify: _MQTTConnectionHandler tag)
+    conn: TCPConnection)
   =>
     try
       _sslctx as SSLContext
@@ -176,7 +172,6 @@ actor MQTTConnection
 
   be _parse_packet(
     conn: TCPConnection,
-    notify: _MQTTConnectionHandler tag,
     data: Array[U8] val)
   =>
     """
@@ -322,7 +317,13 @@ actor MQTTConnection
         end
       end
     else
-      _client.on_error(this, MQTTErrorUnexpectedFormat)
+      let packet_data =
+        try
+          recover val String.from_array(buffer.block(buffer.size())?) end
+        else
+          ""
+        end
+      _client.on_error(this, MQTTErrorUnexpectedFormat, packet_data)
       _disconnect(true)
     end
 

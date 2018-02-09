@@ -6,4 +6,4 @@ A type with all implemented versions of the MQTT protocol as primitives. It can 
 
 * `primitive MQTTv311`: \(default\) Fourth version of the protocol.
 
-Upon receiving an "invalid version" error from the server with the `retry_connection` flag set, the connection will automatically try reconnection with an older version.
+Upon receiving an "invalid version" CONNACK error from the server with the `retry_connection` flag set, the connection will automatically try reconnection with an older version. If already at the oldest version (currently `MQTTv31`), it will stop reconnection.

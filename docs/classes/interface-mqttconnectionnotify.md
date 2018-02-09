@@ -52,7 +52,7 @@ Triggered when the server acknowledges a subscription to a topic. Receives the [
 fun ref on_ping(conn: MQTTConnection ref) =>
 ```
 
-Triggered when a ping request is replied \(as part of the keepalive policy\). Receives the [connection instance](//classes/actor-mqttconnection.md).
+Triggered when a ping request is replied to \(as part of the keepalive policy\). Receives the [connection instance](//classes/actor-mqttconnection.md).
 
 #### on\_disconnect
 
@@ -62,7 +62,7 @@ fun ref on_disconnect(conn: MQTTConnection ref) =>
 
 Triggered when the connection to the server is closed by the user. Receives the [connection instance](//classes/actor-mqttconnection.md).
 
-When disconnected, packets and subscriptions should no longer be sent, and session data should be assumed as lost.
+When disconnected, packets and subscriptions should no longer be sent, and session data may be lost unless reconnection is set and `clean_session'` is `false`.
 
 #### on\_error
 

@@ -20,23 +20,27 @@ The host where the MQTT broker is located, such as `localhost`, `37.187.106.16`,
 
 The port for the MQTT service. By default, most brokers use port `1883`.
 
+## Public methods
+
 #### create
 
 ```pony
 new create(
-  auth': TCPConnectionAuth,
+  auth': AmbientAuth,
   notify': MQTTConnectionNotify iso,
   host': String,
   port': String = "1883",
   keepalive': U16 = 15,
   version': MQTTVersion = MQTTv311,
   retry_connection': U64 = 0,
+  clean_session': Bool = true,
   sslctx': (SSLContext | None) = None,
   sslhost': String = "",
   will_packet': (MQTTPacket | None) = None,
   client_id': String = "",
   user': (String | None) = None,
-  pass': (String | None) = None) =>
+  pass': (String | None) = None)
+=>
 ```
 
 Creates a connection to the MQTT server, interfacing the TCP connection with a user-defined [MQTT notify class](//classes/interface-mqttconnectionnotify.md), by handling incoming and outgoing requests.
@@ -55,7 +59,7 @@ The arguments are:
 
 * `version'`: The [version](//classes/type-mqttversion.md) of the communication protocol. By default, it uses the fourth release of the protocol, version 3.1.1.
 
-* `retry_connection'`: When the connection is closed by the server or due to a client error, attempt to reconnect at the specified interval in seconds. A value of zero means no reattempt will be made. Default is `0`.
+* `retry_connection'`: When the connection is closed by the server or due to a client error, attempt to reconnect at the specified interval in seconds. A value of zero means no attempt to reconnect will be made. Default is `0`.
 
 * `clean_session'`: Controls whether the broker should not store [a persistent session](https://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages) for this connection. Sessions for a same client are identified by the `client_id'` parameter. Default is `true`.
 
@@ -103,6 +107,22 @@ be publish(packet: MQTTPacket) =>
 
 Sends a PUBLISH request for the provided [packet message](//classes/class-mqttpacket.md), along with desired topic, QoS, and retain flag.
 
+#### local_address
+
+```pony
+fun local_address(): (NetAddress | None) =>
+```
+
+Returns the network address of this client. The result is the same of `TCPConnection.local_address()`.
+
+#### remote_address
+
+```pony
+fun remote_address(): (NetAddress | None) =>
+```
+
+Returns the network address of the broker. The result is the same of `TCPConnection.remote_address()`.
+
 ## Advanced code documentation
 
 This next section contains advanced topics, detailing how the code works behind the scenes. Be warned!
@@ -129,4 +149,4 @@ When the connection has been established, but is lost later, this actor can rest
 
 #### Timers
 
-There are a total of three timers used in the MQTTConnection actor. Two of them, [\_MQTTPingTimer](//classes/class-mqttpingtimer.md) and [\_MQTTResendTimer](//classes/class-mqttresendtimer.md), handle message-passing once a connection has been established. The other one, [\_MQTTReconnectTimer](/classes/class-mqttreconnecttimer.md), is only called in cases listed in the section above, where a connection should be retried every few seconds.
+There are a total of three timers used in the MQTTConnection actor. Two of them, [\_MQTTPingTimer](//classes/class-mqttpingtimer.md) and [\_MQTTResendTimer](//classes/class-mqttresendtimer.md), handle message passing once a connection has been established. The other one, [\_MQTTReconnectTimer](/classes/class-mqttreconnecttimer.md), is only called in cases listed in the section above, where a connection should be retried every few seconds.

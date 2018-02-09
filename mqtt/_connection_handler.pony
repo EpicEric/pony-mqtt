@@ -16,15 +16,14 @@ class _MQTTConnectionHandler is TCPConnectionNotify
     _auth = auth
 
   fun ref connected(conn: TCPConnection ref) =>
-    _connection._connected(
-      conn, this, conn.local_address(), conn.remote_address())
+    _connection._connected(conn, conn.local_address(), conn.remote_address())
 
   fun ref connect_failed(conn: TCPConnection ref) =>
-    _connection._connect_failed(conn, this)
+    _connection._connect_failed(conn)
 
   fun ref closed(conn: TCPConnection ref) =>
     _data_buffer.clear()
-    _connection._closed(conn, this)
+    _connection._closed(conn)
 
   fun ref received(conn: TCPConnection ref, data: Array[U8] iso,
     times: USize): Bool =>
@@ -54,7 +53,7 @@ class _MQTTConnectionHandler is TCPConnectionNotify
           for chunk in buffer.done().values() do
             packet_data.append(chunk)
           end
-          _connection._parse_packet(conn, this, consume packet_data)
+          _connection._parse_packet(conn, consume packet_data)
         else
           error
         end
@@ -68,7 +67,7 @@ class _MQTTConnectionHandler is TCPConnectionNotify
     true
 
   fun ref auth_failed(conn: TCPConnection ref) =>
-    _connection._auth_failed(conn, this)
+    _connection._auth_failed(conn)
 
   fun ref throttled(conn: TCPConnection ref) =>
     Backpressure.apply(_auth)

@@ -15,7 +15,7 @@ class iso MQTTSubNotify is MQTTConnectionNotify
     Subscribe to $SYS/# topic upon connecting.
     """
     _env.out.print("> Connected.")
-    conn.subscribe("#")
+    conn.subscribe("$SYS/#")
 
   fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
     """

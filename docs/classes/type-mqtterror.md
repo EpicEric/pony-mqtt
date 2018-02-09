@@ -33,4 +33,4 @@ MQTTErrorConnectAuthorization | Unauthorized client. | End execution. |
 MQTTErrorSubscribeFailure | Subscription to topic was not accepted. | | The subscription topic.
 MQTTErrorServerCode | A server control code (such as CONNECT or SUBSCRIBE) was sent to this client. | End connection. | The control code as text.
 MQTTErrorUnknownCode | An unknown control code was received. | End connection. | The control code byte in hexadecimal.
-MQTTErrorUnexpectedFormat | A generic error when parsing a packet fails mid-way. | End connection. |
+MQTTErrorUnexpectedFormat | A generic error when parsing a packet fails mid-way. | End connection. | A string with the bytes of the failed parsed packet.
