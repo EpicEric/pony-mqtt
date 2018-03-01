@@ -110,18 +110,18 @@ Sends a PUBLISH request for the provided [packet message](//classes/class-mqttpa
 #### local_address
 
 ```pony
-fun local_address(): (NetAddress | None) =>
+fun local_address(): NetAddress ? =>
 ```
 
-Returns the network address of this client. The result is the same of `TCPConnection.local_address()`.
+Returns the network address of this client. The result is the same of `TCPConnection.local_address()?`.
 
 #### remote_address
 
 ```pony
-fun remote_address(): (NetAddress | None) =>
+fun remote_address(): NetAddress ? =>
 ```
 
-Returns the network address of the broker. The result is the same of `TCPConnection.remote_address()`.
+Returns the network address of the broker. The result is the same of `TCPConnection.remote_address()?`.
 
 ## Advanced code documentation
 

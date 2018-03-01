@@ -24,7 +24,7 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
         "] Connected.")
       let host = 
         try
-          (conn.local_address() as NetAddress).name()?._1
+          conn.local_address()?.name()?._1
         else
           "unknown"
         end

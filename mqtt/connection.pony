@@ -722,8 +722,8 @@ actor MQTTConnection
     """
     _end_connection(true)
 
-  fun local_address(): (NetAddress | None) =>
-    _local_address
+  fun local_address(): NetAddress ? =>
+    _local_address as NetAddress
 
-  fun remote_address(): (NetAddress | None) =>
-    _remote_address
+  fun remote_address(): NetAddress ? =>
+    _remote_address as NetAddress
