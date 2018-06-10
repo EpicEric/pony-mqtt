@@ -1,2 +1,6 @@
-build/
+# Editors
 .vscode/
+
+# Build directories
+build/
+docs/

@@ -10,7 +10,7 @@ Pony-MQTT is in alpha, which means breaking changes are expected. Please read [C
 
 ### Available features
 
-* Support for MQTT versions 3.1 and 3.1.1 through TCP.
+* Support for MQTT protocol versions 3.1 and 3.1.1 through TCP.
 * TLS, authentication, and auto-retry connection.
 * QoS for publish, subscribe, unsubscribe.
 
@@ -29,7 +29,3 @@ Pony-MQTT is in alpha, which means breaking changes are expected. Please read [C
 * `stable fetch` to fetch your dependencies.
 * `use "mqtt"` to include this package.
 * `stable env ponyc` to compile your application.
-
-## Usage
-
-Please refer to the [official documentation](https://epiceric.gitbooks.io/pony-mqtt/) hosted on GitBook.

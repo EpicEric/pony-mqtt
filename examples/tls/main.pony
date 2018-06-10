@@ -15,7 +15,7 @@ class iso MQTTTLSNotify is MQTTConnectionNotify
   fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _env.out.print("Success.")
     conn.disconnect()
-  
+
   fun ref on_error(
     conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
   =>

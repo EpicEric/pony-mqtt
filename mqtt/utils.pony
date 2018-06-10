@@ -3,7 +3,7 @@ use "time"
 
 primitive MQTTUtils
   """
-  An utility with functions used throughout MQTTConnection.
+  An utility to generate intermediate values in MQTTConnection.
   """
 
   fun random_string(
@@ -35,7 +35,7 @@ primitive MQTTUtils
   fun remaining_length(length: USize): Array[U8] val =>
     """
     Generates an array of bytes in the format specified by the MQTT protocol
-    for the "Remaining Length" field.
+    for the "Remaining Length" field, encoding the provided integer.
     """
     let buffer = recover Array[U8] end
     var length' = length

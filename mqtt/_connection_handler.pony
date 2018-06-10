@@ -4,8 +4,8 @@ use "net"
 
 class _MQTTConnectionHandler is TCPConnectionNotify
   """
-  A TCPConnectionNotify class that handles and redirects all messages
-  to an MQTTConnection actor.
+  A TCPConnectionNotify class that handles and redirects all TCP events and
+  messages to an MQTTConnection actor.
   """
   let _connection: MQTTConnection
   let _auth: BackpressureAuth
@@ -29,7 +29,9 @@ class _MQTTConnectionHandler is TCPConnectionNotify
     times: USize): Bool =>
     """
     Combines and breaks received data into control packets, based on the
-    remaining length value.
+    Remaining Length field from MQTT control packets. Once the size has been
+    fixed in this function through the use of an internal buffer, the data is
+    sent to the MQTTConnection actor through the `_parse_packet()` behaviour.
     """
     let full_data: Array[U8] val = consume data
     _data_buffer.append(full_data)

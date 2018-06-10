@@ -6,28 +6,83 @@ use "time"
 
 actor MQTTConnection
   """
-  An actor that handles the entire MQTT connection.
+  An actor that handles the connection to the MQTT server in the background.
+  When created, it establishes a TCP connection to the specified broker and
+  exchanges messages according to the protocol version. Afterwards, it can be
+  called by the user to execute actions such as publishing messages or
+  subscribing to topics, and triggers events in an MQTTConnectionNotify class
+  when receiving a request from the server or when encountering an error.
 
-  It can receive data through an _MQTTConnectionHandler, or commands from an
-  MQTTConnectionNotify. This allows for all expected capabilities of
-  a regular MQTT client.
+  It creates a TCPConnectionNotify object of its own, to interface with a TCP
+  connection only through it. It also creates three different timers to organize
+  its workflow. he user can also specify reconnection, making this class dispose
+  of all current state and attempt to establish a new connection.
+
+  During execution, it may also raise one of many errors to the notify class.
   """
 
   let auth: AmbientAuth
+  """
+  The connection authority used in the TCP backend. Usually, this value is a
+  cast from `env.root`.
+  """
+
   let host: String
+  """
+  The host where the MQTT broker is located, such as `localhost`,
+  `37.187.106.16`, or `test.mosquitto.org`.
+  """
+
   let port: String
+  """
+  The port for the MQTT service. By default, most brokers use port `1883` for
+  unsecure connections.
+  """
+
   let _client: MQTTConnectionNotify
   let _keepalive: U16
   let _user: (String | None)
   let _pass: (String | None)
+
   let _retry_connection: Bool
+  """
+  Set to true if `_reconnect_time` is greater than zero.
+  """
+
   let _clean_session: Bool
   let _sslctx: (SSLContext | None)
   let _sslhost: String
   let _will_packet: (MQTTPacket | None)
+  let _client_id: String
   let _ping_time: U64
   let _resend_time: U64
+
   let _reconnect_time: U64
+  """
+  When the connection has been established, but is lost later, this actor can
+  restart a TCPConnection if defined by the user (i.e. if the
+  `retry_connection'` parameter is greater than zero). This varies from the
+  type of disconnection:
+
+  * **Socket errors** (i.e. network has crashed, server was shut down etc.):
+  The program simply creates a reconnect timer that periodically calls
+  `_new_connection()`, which simply kickstarts a new TCPConnection with the
+  same parameters. This timer can only be started upon calling `closed()`, if
+  `_is_connected` was `true`.
+
+  * **CONNACK errors** (i.e. wrong connection parameters): The program closes
+  the connection from the client side, alters its parameters, and retries with
+  `_new_connection()`. There are two different correctable errors and how
+  the client attempts to fix them:
+
+    1. _Unnacceptable protocol version_: Try with an older protocol version 
+    (for example, 3.1 instead of 3.1.1). If already at the oldest protocol
+    version, drop connection.
+
+    2. _Server unavailable_: Simply retry the connection. This can lead to
+    infinite loops on poorly configured brokers or clients.
+  """
+
   let _timers: Timers = Timers
   let _unimplemented: Map[U8, String] = _unimplemented.create()
   let _sent_packets: Map[U16, MQTTPacket] = _sent_packets.create()
@@ -36,7 +91,6 @@ actor MQTTConnection
   let _sub_topics: Map[U16, (String, U8)] = _sub_topics.create()
   let _unsub_topics: Map[U16, String] = _unsub_topics.create()
   var _version: MQTTVersion
-  var _client_id: String
   var _is_connected: Bool = false
   var _conn: (TCPConnection | None) = None
   var _packet_id: U16 = 0
@@ -62,6 +116,55 @@ actor MQTTConnection
     user': (String | None) = None,
     pass': (String | None) = None)
   =>
+    """
+    Creates a connection to the MQTT server, interfacing the TCP connection
+    with a user-defined MQTT notify class, by handling incoming and outgoing
+    requests.
+
+    The arguments are:
+
+    * `auth'`: **(required)** The connection authority used in the TCP backend.
+    Usually, this value is a cast from `env.root`.
+    * `notify'`: **(required)**  The `MQTTConnectionNotify` implemented by the
+    user which will receive messages and interact with the MQTT client.
+    * `host'`: **(required)**  The host where the MQTT broker is located, such
+    as `localhost`, `37.187.106.16`, or `test.mosquitto.org`.
+    * `port'`: The port for the MQTT service. By default, most brokers use port
+    `1883`.
+    * `keepalive'`: Duration in seconds for the keepalive mechanism. If set to
+    `0`, the keepalive mechanism is disabled, but ping messages will still be
+    sent once in a while to avoid inactivity. Default is `15`.
+    * `version'`: The version of the communication protocol. By default, it
+    uses the fourth release of the protocol, version 3.1.1.
+    * `retry_connection'`: When the connection is closed by the server or due
+    to a client error, attempt to reconnect at the specified interval in
+    seconds. A value of zero means no attempt to reconnect will be made.
+    Default is `0`.
+    * `clean_session'`: Controls whether the broker should not store
+    [a persistent session](https://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages)
+    for this connection. Sessions for a same client are identified by the
+    `client_id'` parameter. Default is `true`.
+    * `sslctx'`: An SSLContext object, with client and certificate authority
+    set appropriately, used when connecting to a TLS port in a broker. A value
+    of `None` means no security will be implemented over the socket. Default is
+    `None`.
+    * `sslhost'`: A String representing a host for signed certificates. If the
+    hostname isn't part of the certificate, leave it blank. Default is `""`.
+    * `will_packet'`: MQTT allows the client to send a
+    [will message](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Will_Flag)
+    when the connection with the server is unexpectedly lost. If this field is
+    an [MQTTPacket](//classes/class-mqttpacket.md) with a valid topic, then the
+    specified package will be sent unless the client gracefully disconnects
+    with the `disconnect()` behaviour without providing the will parameter.
+    * `client_id'`: A string that will be used as the client ID to the broker
+    for this session. By default, it will generate a random string with 8
+    hexadecimal characters.
+    * `user'`: A string with the username to authenticate to the broker. If
+    `None` or empty, no authentication will be made. Default is `None`.
+    * `pass'`: A string with the password to authenticate to the broker. If
+    `None` or empty, an empty password will be used if `user'` is not `None`.
+    Default is `None`.
+    """
     auth = auth'
     host = host'
     port = port'
@@ -200,24 +303,17 @@ actor MQTTConnection
           _timers(consume ping_timer)
           _client.on_connect(this, buffer.peek_u8(2)? == 0x01)
         | 1 =>
-          if _retry_connection and not(_version is MQTTv31) then
+          try
+            if not _retry_connection then error end
+            let version' = _version as _MQTTVersionDowngradable
             _client.on_error(this, MQTTErrorConnectProtocolRetry)
-            match _version
-            | MQTTv311 =>
-              _update_version(MQTTv31)
-              _new_connection()
-            end
+            _update_version(version'.downgrade())
+            _new_connection()
           else
             _client.on_error(this, MQTTErrorConnectProtocol)
           end
         | 2 =>
-          if _retry_connection then
-            _client.on_error(this, MQTTErrorConnectIDRetry)
-            _client_id = MQTTUtils.random_string()
-            _new_connection()
-          else
-            _client.on_error(this, MQTTErrorConnectID)
-          end
+          _client.on_error(this, MQTTErrorConnectID)
         | 3 =>
           if _retry_connection then
             _client.on_error(this, MQTTErrorConnectServerRetry)
@@ -679,7 +775,8 @@ actor MQTTConnection
 
   be disconnect(send_will: Bool = false) =>
     """
-    Ends the MQTT and TCP connections.
+    Sends a DISCONNECT request to the broker, and gracefully ends the MQTT and
+    TCP connections.
 
     If send_will is true, the will packet will be sent before disconnecting.
     """
@@ -687,21 +784,23 @@ actor MQTTConnection
   
   be subscribe(topic: String, qos: U8 = 0) =>
     """
-    Subscribes to a topic.
+    Sends a SUBSCRIBE request to the broker for the associated topic filter,
+    with the specified QoS level.
     """
     _subscribe(topic, qos)
   
   be unsubscribe(topic: String) =>
     """
-    Unsubscribes from a topic.
+    Sends an UNSUBSCRIBE request to the broker from the associated topic filter.
     """
     _unsubscribe(topic)
 
   be publish(packet: MQTTPacket) =>
     """
-    Publishes a packet to a specified topic.
+    Sends a PUBLISH request for the provided packet message, along with desired
+    topic, QoS, and retain flag.
 
-    Strips the connection-specific control ID when requested by the user.
+    This behaviour will strip any package control ID.
     """
     _publish(MQTTPacket(
       packet.topic,
@@ -717,7 +816,15 @@ actor MQTTConnection
     _end_connection(true)
 
   fun local_address(): NetAddress ? =>
+    """
+    Returns the network address of this client. The result is the same of
+    `TCPConnection.local_address()?`.
+    """
     _local_address as NetAddress
 
   fun remote_address(): NetAddress ? =>
+    """
+    Returns the network address of the broker. The result is the same of
+    `TCPConnection.remote_address()?`.
+    """
     _remote_address as NetAddress

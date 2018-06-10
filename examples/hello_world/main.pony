@@ -2,7 +2,7 @@ use "mqtt"
 
 class iso MQTTHelloWorldNotify is MQTTConnectionNotify
   """
-  Sends a message and disconnects.
+  Connects to the broker, sends a message and disconnects.
   """
 
   fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>

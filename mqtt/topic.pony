@@ -5,7 +5,9 @@ primitive MQTTTopic
 
   fun tag validate_publish(topic: String): Bool =>
     """
-    Valid PUBLISH topics do not contain '#' or '+'.
+    Validates a PUBLISH topic, by verifying if it has no wildcard (`#` or `+`)
+    or null characters. Returns `true` if the topic is valid and `false`
+    otherwise.
     """
     if (topic.size() < 1) or (topic.size() > 65535) then return false end
     not(topic.contains("#"))
@@ -14,8 +16,9 @@ primitive MQTTTopic
 
   fun tag validate_subscribe(topic: String): Bool =>
     """
-    Valid SUBSCRIBE/UNSUBSCRIBE topics may include isolated '#' or '+'
-    between forward dashes.
+    Validates a SUBSCRIBE/UNSUBSCRIBE filter, by verifying if it has wildcards
+    properly positioned between dashes (`#` or `+`) and no null characters.
+    Returns `true` if the topic is valid and `false` otherwise.
     """
     if (topic.size() < 1) or (topic.size() > 65535) then return false end
     if topic.contains(String.from_array([0x00])) then return false end
@@ -41,16 +44,18 @@ primitive MQTTTopic
     end
     true
 
-  fun tag match_topic(name: String, filter: String): Bool =>
+  fun tag match_topic(topic: String, filter: String): Bool =>
     """
-    Check if the topic name matches the topic filter and they are both valid.
+    Checks if the provided PUBLISH topic in `name` matches the provided
+    SUBSCRIBE/UNSUBSCRIBE filter in `filter` and if they are both valid.
+    Returns `true` if the topic matches the filter and `false` otherwise.
     """
-    if validate_publish(name) and validate_subscribe(filter) then
-      let name_array: Array[String] val = name.split_by("/")
+    if validate_publish(topic) and validate_subscribe(filter) then
+      let topic_array: Array[String] val = topic.split_by("/")
       let filter_array: Array[String] val = filter.split_by("/")
-      if name_array.size() < filter_array.size() then
+      if topic_array.size() < filter_array.size() then
         return false
-      elseif name_array.size() > filter_array.size() then
+      elseif topic_array.size() > filter_array.size() then
         try
           if filter_array(filter_array.size() - 1)? != "#" then
             return false
@@ -61,8 +66,8 @@ primitive MQTTTopic
         try
           let multi_wc = filter_array(i)? == "#"
           let single_wc = filter_array(i)? == "+"
-          let equal_level = filter_array(i)? == name_array(i)?
-          if (i == 0) and (name_array(0)?(0)? == '$') then
+          let equal_level = filter_array(i)? == topic_array(i)?
+          if (i == 0) and (topic_array(0)?(0)? == '$') then
             if single_wc or multi_wc or not(equal_level) then
               return false
             end
