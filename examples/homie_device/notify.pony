@@ -41,7 +41,7 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     try (_device as HomieDevice).message(packet) end
 
   fun ref on_error(
-    conn: MQTTConnection ref, err: MQTTError, info: String)
+    conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
   =>
     _env.out.print(
       "<ERROR> [" +

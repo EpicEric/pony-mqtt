@@ -16,7 +16,9 @@ class iso MQTTTLSNotify is MQTTConnectionNotify
     _env.out.print("Success.")
     conn.disconnect()
   
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
+  =>
     _env.out.print("Error: " + err.string())
 
 actor Main

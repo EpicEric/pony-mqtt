@@ -1,6 +1,6 @@
 # type MQTTError
 
-There is a [notify](//classes/interface-mqttconnectionnotify.md) function, `on_error(conn: MQTTConnection ref, err: MQTTError, info: String)`, that receives one of the possible `Stringable`primitives of an MQTTError to represent a raised error, and any additional information if applicable. You may choose to handle or ignore them.
+There is a [notify](//classes/interface-mqttconnectionnotify.md) function, `on_error(conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)`, that receives one of the possible `Stringable`primitives of an MQTTError to represent a raised error, and any additional information if applicable. You may choose to handle or ignore them.
 
 It may be one of the following:
 

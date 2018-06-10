@@ -52,7 +52,9 @@ interface MQTTConnectionNotify
     None
 
   fun ref on_error(
-    conn: MQTTConnection ref, err: MQTTError, info: String = "")
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val = recover val Array[U8] end)
   =>
     """
     Called when an error occurs. Receives the error message.

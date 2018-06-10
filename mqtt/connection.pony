@@ -285,7 +285,7 @@ actor MQTTConnection
         if (buffer.peek_u8(0)? and 0x80) == 0x00 then
           _client.on_subscribe(this, topic, buffer.u8()? and 0x03)
         else
-          _client.on_error(this, MQTTErrorSubscribeFailure, topic)
+          _client.on_error(this, MQTTErrorSubscribeFailure, topic.array())
         end
       | 0xB => // UNSUBACK
         if buffer.peek_u8(0)? != 0xB0 then error end
@@ -302,26 +302,20 @@ actor MQTTConnection
           _client.on_error(
             this,
             MQTTErrorServerCode,
-            _unimplemented(buffer.peek_u8(0)?)?)
+            _unimplemented(buffer.peek_u8(0)?)?.array())
           _disconnect(true)
         else
           let control_code = buffer.peek_u8(0)?
-          _client.on_error(this, MQTTErrorUnknownCode, recover
-            let msb = control_code >> 4
-            let lsb = control_code and 0xF
-            String.from_array(
-              [ '0' + msb + if msb > 0x9 then 7 else 0 end
-                '0' + lsb + if lsb > 0x9 then 7 else 0 end ])
-          end)
+          _client.on_error(this, MQTTErrorUnknownCode, [ control_code ])
           _disconnect(true)
         end
       end
     else
-      let packet_data =
+      let packet_data: Array[U8] val =
         try
-          recover val String.from_array(buffer.block(buffer.size())?) end
+          buffer.block(buffer.size())?
         else
-          ""
+          recover val Array[U8] end
         end
       _client.on_error(this, MQTTErrorUnexpectedFormat, packet_data)
       _disconnect(true)

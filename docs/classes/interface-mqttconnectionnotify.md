@@ -67,10 +67,10 @@ When disconnected, packets and subscriptions should no longer be sent, and sessi
 #### on\_error
 
 ```pony
-fun ref on_error(conn: MQTTConnection ref, message: String) =>
+fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val) =>
 ```
 
-Triggered when an error has occured. Receives the [connection instance](//classes/actor-mqttconnection.md).
+Triggered when an error has occured. Receives the [connection instance](//classes/actor-mqttconnection.md), the [corresponding error](//classes/type-mqtterror.md), and additional byte array info if applicable.
 
 Some errors may result in the connection to the server being closed afterwards. Errors include, but are not limited to:
 

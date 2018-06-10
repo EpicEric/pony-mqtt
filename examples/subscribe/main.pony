@@ -41,7 +41,9 @@ class iso MQTTSubNotify is MQTTConnectionNotify
   fun ref on_disconnect(conn: MQTTConnection ref) =>
     None
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
+  =>
     """
     Print error.
     """

@@ -175,7 +175,11 @@ class _TestConnectionConnectClient is MQTTConnectionNotify
   fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.complete_action("mqtt connack")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionConnectServer is TCPConnectionNotify
@@ -304,7 +308,11 @@ class _TestConnectionUnacceptedVersionClient is MQTTConnectionNotify
     _h.assert_false(_first_try)
     _h.complete_action("mqtt connack good")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.assert_true(_first_try)
     _first_try = false
     _h.assert_is[MQTTError](err, MQTTErrorConnectProtocolRetry)
@@ -479,7 +487,11 @@ class _TestConnectionAuthenticationErrorClient is MQTTConnectionNotify
   fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
     _h.fail_action("mqtt connack bad")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     if err is MQTTErrorConnectAuthentication then
       _h.complete_action("mqtt connack bad")
     else
@@ -625,7 +637,11 @@ class _TestConnectionCleanSessionClient is MQTTConnectionNotify
       _h.fail_action("mqtt connack")
     end
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionCleanSessionServer is TCPConnectionNotify
@@ -693,7 +709,11 @@ class _TestConnectionNoCleanSessionClient is MQTTConnectionNotify
       _h.fail_action("mqtt connack")
     end
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionNoCleanSessionServer is TCPConnectionNotify
@@ -757,7 +777,11 @@ class _TestConnectionPublishSendClient is MQTTConnectionNotify
     _h.complete_action("mqtt connack")
     conn.publish(MQTTPacket("$pony/set", "My test".array(), true, 0))
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
   fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket) =>
@@ -852,7 +876,11 @@ class _TestConnectionPublishReceiveClient is MQTTConnectionNotify
     _h.assert_eq[String](message, "My test")
     _h.complete_action("mqtt publish")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
     _h.fail_action("mqtt publish")
 
@@ -919,7 +947,11 @@ class _TestConnectionSubscribeClient is MQTTConnectionNotify
     _h.assert_eq[U8](qos, 1)
     _h.complete_action("mqtt suback")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionSubscribeServer is TCPConnectionNotify
@@ -1007,7 +1039,11 @@ class _TestConnectionUnsubscribeClient is MQTTConnectionNotify
     _h.assert_eq[String](topic, "$pony/#")
     _h.complete_action("mqtt unsuback")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionUnsubscribeServer is TCPConnectionNotify
@@ -1094,7 +1130,11 @@ class _TestConnectionDisconnectClient is MQTTConnectionNotify
   fun ref on_disconnect(conn: MQTTConnection ref) =>
     _h.complete_action("mqtt disconnack")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionDisconnectServer is TCPConnectionNotify
@@ -1164,7 +1204,11 @@ class _TestConnectionPingClient is MQTTConnectionNotify
   fun ref on_ping(conn: MQTTConnection ref) =>
     _h.complete_action("mqtt pingresp")
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionPingServer is TCPConnectionNotify
@@ -1244,7 +1288,11 @@ class _TestConnectionReconstructMessageClient is MQTTConnectionNotify
       _h.fail("mqtt publish")
     end
 
-  fun ref on_error(conn: MQTTConnection ref, err: MQTTError, info: String) =>
+  fun ref on_error(
+    conn: MQTTConnection ref,
+    err: MQTTError,
+    info: Array[U8] val)
+  =>
     _h.fail_action("mqtt connack")
 
 class _TestConnectionReconstructMessageServer is TCPConnectionNotify
