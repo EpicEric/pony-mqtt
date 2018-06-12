@@ -1,0 +1,8 @@
+# MkDocs settings
+site_name: Pony-MQTT
+repo_name: epiceric/pony-mqtt
+repo_url: https://github.com/epiceric/pony-mqtt
+
+# Package config
+packages:
+- mqtt

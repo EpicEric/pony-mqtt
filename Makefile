@@ -7,12 +7,15 @@ build:
 test: build/mqtt
 	build/mqtt
 
-docs: mqtt/*.pony
-	rm -rf docs
-	ponyc mqtt --output docs --docs --pass docs
+docs: mkdocs.yml mqtt/*.pony
+	rm -rf mqtt-docs
+	ponyc mqtt --docs --pass docs
+
+docs-online: docs mqtt-docs
+	python fix_docs.py -d mqtt-docs -t mkdocs.yml
 
 clean:
 	rm -rf build
-	rm -rf docs
+	rm -rf mqtt-docs
 
-.PHONY: clean test
+.PHONY: clean docs docs-online test

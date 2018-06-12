@@ -153,9 +153,9 @@ actor MQTTConnection
     * `will_packet'`: MQTT allows the client to send a
     [will message](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Will_Flag)
     when the connection with the server is unexpectedly lost. If this field is
-    an [MQTTPacket](//classes/class-mqttpacket.md) with a valid topic, then the
-    specified package will be sent unless the client gracefully disconnects
-    with the `disconnect()` behaviour without providing the will parameter.
+    an MQTTPacket with a valid topic, then the specified package will be sent
+    unless the client gracefully disconnects with the `disconnect()` behaviour
+    without providing the will parameter.
     * `client_id'`: A string that will be used as the client ID to the broker
     for this session. By default, it will generate a random string with 8
     hexadecimal characters.

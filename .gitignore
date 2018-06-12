@@ -3,4 +3,5 @@
 
 # Build directories
 build/
-docs/
+mqtt-docs/
+venv/
