@@ -20,12 +20,38 @@ jobs:
       - run: make --directory=examples/homie_device
       - run: make --directory=examples/subscribe
       - run: make --directory=examples/tls
+  generate-docs:
+    docker:
+      - image: ponylang/ponyc:latest
+    steps:
+      - checkout
+      - run: make docs
+      - persist_to_workspace:
+          root: .
+          paths: mqtt-docs
+  deploy-docs:
+    docker:
+      - image: python:latest
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run: bash deploy_docs.bash
 
 workflows:
   version: 2
   commit:
     jobs:
       - vs-ponyc-release
+      - generate-docs:
+          requires:
+            - vs-ponyc-release
+          filters:
+            branches:
+              only: master
+      - deploy-docs:
+          requires:
+            - generate-docs
   nightly:
     triggers:
       - schedule:

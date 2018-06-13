@@ -2,6 +2,14 @@
 site_name: Pony-MQTT
 repo_name: epiceric/pony-mqtt
 repo_url: https://github.com/epiceric/pony-mqtt
+edit_uri: ''
+theme:
+  name: ponylang
+  palette:
+    primary: indigo
+    accent: indigo
+  logo:
+    icon: cloud
 
 # Package config
 packages:
