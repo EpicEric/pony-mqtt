@@ -1,26 +1,27 @@
-DOCS_DIR=mqtt-docs
+PACKAGE=mqtt
+BUILD_DIR=build
+DOCS_DIR=$(PACKAGE)-docs
+TEST_BINARY=$(BUILD_DIR)/$(PACKAGE)
 
-build/mqtt: build mqtt/*.pony mqtt/test/*.pony
-	ponyc mqtt/test --output build --bin-name mqtt --debug
+$(TEST_BINARY): $(BUILD_DIR) $(PACKAGE)/*.pony $(PACKAGE)/test/*.pony
+	ponyc $(PACKAGE)/test --output $(BUILD_DIR) --bin-name $(PACKAGE) --debug
 
-build:
-	mkdir build
+$(BUILD_DIR):
+	mkdir $(BUILD_DIR)
 
-test: build/mqtt
-	build/mqtt
+test: $(TEST_BINARY)
+	$(TEST_BINARY)
 
-docs: mkdocs.yml mqtt/*.pony
-	rm -rf mqtt-docs
-	ponyc mqtt --docs --pass docs
+docs: $(DOCS_DIR)
 
-mqtt-docs: docs
+$(DOCS_DIR): mkdocs.yml $(PACKAGE)/*.pony
+	rm -rf $(DOCS_DIR)
+	ponyc $(PACKAGE) --docs --pass docs
 
-docs-online:
-	if [ ! -d "$(DOCS_DIR)" ]; then make docs; fi
-	python fix_docs.py -d mqtt-docs -t mkdocs.yml
+docs-online: | $(DOCS_DIR)
+	./fix_docs.py -d $(DOCS_DIR) -t mkdocs.yml
 
 clean:
-	rm -rf build
-	rm -rf mqtt-docs
+	rm -rf $(BUILD_DIR) $(DOCS_DIR)
 
 .PHONY: clean docs docs-online test
