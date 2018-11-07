@@ -18,7 +18,7 @@ $(DOCS_DIR): mkdocs.yml $(PACKAGE)/*.pony
 	rm -rf $(DOCS_DIR)
 	ponyc $(PACKAGE) --docs --pass docs
 
-docs-online: | $(DOCS_DIR)
+docs-online:
 	./fix_docs.py -d $(DOCS_DIR) -t mkdocs.yml
 
 clean:
