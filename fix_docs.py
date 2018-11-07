@@ -9,7 +9,7 @@ import yaml
 
 TEMPLATE_SPECIAL_CONFIGS = [
     'packages',
-    'pages'
+    'nav'
 ]
 
 STDLIB_PACKAGES = [
@@ -105,7 +105,7 @@ class MkdocsFixer(object):
 
         new_pages = []
         page_regex = re.compile(r'^package (.*)$')
-        for page in new_docs_file_data['pages']:
+        for page in new_docs_file_data['nav']:
             section = list(page)[0]
 
             # Remove non-package sources from YAML
@@ -128,7 +128,7 @@ class MkdocsFixer(object):
                 if not match or match.group(1) in packages:
                     new_pages.append(page)
 
-        new_docs_file_data['pages'] = new_pages
+        new_docs_file_data['nav'] = new_pages
         return new_docs_file_data
 
     def update_doc_files(self, docs_dir_path, packages):
