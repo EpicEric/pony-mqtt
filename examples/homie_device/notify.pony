@@ -51,5 +51,8 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     try (_device as HomieDevice).stop() end
 
   fun tag get_date(): String =>
-    let date = PosixDate(Time.seconds())
-    date.format("%Y-%m-%d %H:%M:%S")
+    try
+      let date = PosixDate(Time.seconds())
+      date.format("%Y-%m-%d %H:%M:%S")?
+    else "???" end
+
