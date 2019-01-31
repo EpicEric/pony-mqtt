@@ -133,7 +133,7 @@ class MkdocsFixer(object):
 
     def update_doc_files(self, docs_dir_path, packages):
         stdlib_link_regex_list = list(map(
-            (lambda x: re.compile(r'\[(.+?)\]\(({}-[^)]+)\)'.format(x))),
+            (lambda x: re.compile(r'\[(.+?)\]\(({}-[^).]+)(\.md)?\)'.format(x))),
             STDLIB_PACKAGES))
         for file_name in os.listdir(docs_dir_path):
 
@@ -170,7 +170,7 @@ class MkdocsFixer(object):
                     with open(file_path, 'r+') as f:
                         file_data = f.read()
                         new_file_data = reduce(
-                            (lambda x, y: y.sub(r'[\g<1>](https://stdlib.ponylang.io/\g<2>)', x)),
+                            (lambda x, y: y.sub(r'[\g<1>](https://stdlib.ponylang.io/\g<2>/)', x)),
                             stdlib_link_regex_list,
                             file_data)
                         f.seek(0)
