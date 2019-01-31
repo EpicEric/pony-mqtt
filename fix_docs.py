@@ -170,7 +170,7 @@ class MkdocsFixer(object):
                     with open(file_path, 'r+') as f:
                         file_data = f.read()
                         new_file_data = reduce(
-                            (lambda x, y: y.sub(r'[\g<1>](https://stdlib.ponylang.org/\g<2>)', x)),
+                            (lambda x, y: y.sub(r'[\g<1>](https://stdlib.ponylang.io/\g<2>)', x)),
                             stdlib_link_regex_list,
                             file_data)
                         f.seek(0)
