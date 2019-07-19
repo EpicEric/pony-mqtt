@@ -15,7 +15,9 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
     _env = env
     _id = id
 
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+  fun ref on_connect(
+    conn: MQTTConnectionInterface ref, session_present: Bool)
+  =>
     match _device
     | None =>
       _env.out.print(
@@ -37,11 +39,11 @@ class iso MQTTHomieDeviceNotify is MQTTConnectionNotify
       d.restart(session_present)
     end
 
-  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
+  fun ref on_message(conn: MQTTConnectionInterface ref, packet: MQTTPacket) =>
     try (_device as HomieDevice).message(packet) end
 
   fun ref on_error(
-    conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
+    conn: MQTTConnectionInterface ref, err: MQTTError, info: Array[U8] val)
   =>
     _env.out.print(
       "<ERROR> [" +

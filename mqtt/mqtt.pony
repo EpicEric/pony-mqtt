@@ -32,7 +32,10 @@ class iso MyNotify is MQTTConnectionNotify
   new iso create(...) =>
     // ...
 
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+  fun ref on_connect(
+    conn: MQTTConnectionInterface ref,
+    session_present: Bool)
+  =>
     // ...
 
 actor Main
@@ -63,7 +66,10 @@ use "mqtt"
 
 class iso MQTTHelloWorldNotify is MQTTConnectionNotify
   // Connects to the broker, sends a message and disconnects.
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+  fun ref on_connect(
+    conn: MQTTConnectionInterface ref,
+    session_present: Bool)
+  =>
     conn.publish(MQTTPacket("pony", "Hello, world!".array()))
     conn.disconnect()
 
@@ -92,21 +98,30 @@ class iso MQTTSubNotify is MQTTConnectionNotify
   new iso create(env: Env) =>
     _env = env
 
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+  fun ref on_connect(
+    conn: MQTTConnectionInterface ref,
+    session_present: Bool)
+  =>
     // Subscribe to $SYS/# topic upon connecting.
     _env.out.print("> Connected.")
     conn.subscribe("$SYS/#")
 
-  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
+  fun ref on_message(conn: MQTTConnectionInterface ref, packet: MQTTPacket) =>
     // Print received messages.
     _env.out.print(packet.topic + " -- " + String.from_array(packet.message))
 
-  fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
+  fun ref on_subscribe(
+    conn: MQTTConnectionInterface ref,
+    topic: String,
+    qos: U8)
+  =>
     // Confirm subscription.
     _env.out.print("> Subscribed to topic '" + topic + "'.")
 
   fun ref on_error(
-    conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
+    conn: MQTTConnectionInterface ref,
+    err: MQTTError,
+    info: Array[U8] val)
   =>
     // Print error.
     _env.out.print("MqttError: " + err.string())

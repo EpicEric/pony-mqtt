@@ -3,23 +3,18 @@ jobs:
   vs-ponyc-release:
     docker:
       - image: ponylang/ponyc:release
-    steps:
+    steps: &ci-steps
       - checkout
+      - run: bash .ci-scripts/install-openssl-1.1.0.bash
       - run: make test
       - run: make --directory=examples/hello_world
       - run: make --directory=examples/homie_device
       - run: make --directory=examples/subscribe
-      - run: make --directory=examples/tls
+      - run: make --directory=examples/tls ssl=1.1.x
   vs-ponyc-master:
     docker:
       - image: ponylang/ponyc:latest
-    steps:
-      - checkout
-      - run: make test
-      - run: make --directory=examples/hello_world
-      - run: make --directory=examples/homie_device
-      - run: make --directory=examples/subscribe
-      - run: make --directory=examples/tls
+    steps: *ci-steps
   generate-docs:
     docker:
       - image: ponylang/ponyc:latest
@@ -28,7 +23,8 @@ jobs:
       - run: make docs
       - persist_to_workspace:
           root: .
-          paths: mqtt-docs
+          paths:
+            - mqtt-docs
   deploy-docs:
     docker:
       - image: python:latest
@@ -36,12 +32,13 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
-      - run: bash deploy_docs.bash
+      - run: bash .ci-scripts/deploy_docs.bash
 
 workflows:
   version: 2
   commit:
     jobs:
+      - vs-ponyc-master
       - vs-ponyc-release
       - generate-docs:
           requires:

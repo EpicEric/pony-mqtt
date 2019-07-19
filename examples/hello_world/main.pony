@@ -5,7 +5,9 @@ class iso MQTTHelloWorldNotify is MQTTConnectionNotify
   Connects to the broker, sends a message and disconnects.
   """
 
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+  fun ref on_connect(
+    conn: MQTTConnectionInterface ref, session_present: Bool)
+  =>
     conn.publish(MQTTPacket("pony", "Hello, world!".array()))
     conn.disconnect()
 
