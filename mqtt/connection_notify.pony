@@ -5,7 +5,7 @@ interface MQTTConnectionNotify
   `on_connect()` method.
   """
 
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool)
+  fun ref on_connect(conn: MQTTConnectionInterface ref, session_present: Bool)
     """
     Called after successfully connecting to an MQTT broker. Receives the
     connection and if [a session](https://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages)
@@ -14,42 +14,46 @@ interface MQTTConnectionNotify
     This method must be implemented.
     """
 
-  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
+  fun ref on_message(conn: MQTTConnectionInterface ref, packet: MQTTPacket) =>
     """
     Called upon receiving a PUBLISH message from the broker. Receives the
     connection and said message.
     """
     None
 
-  fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket) =>
+  fun ref on_publish(conn: MQTTConnectionInterface ref, packet: MQTTPacket) =>
     """
     Called after succesfully publishing a message to the broker. Receives the
     connection and said message.
     """
     None
 
-  fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
+  fun ref on_subscribe(
+    conn: MQTTConnectionInterface ref,
+    topic: String,
+    qos: U8)
+  =>
     """
     Called after successfully subscribing to a topic. Receives the connection,
     said topic, and the associated QoS level of the subscription (from 0 to 2).
     """
     None
 
-  fun ref on_unsubscribe(conn: MQTTConnection ref, topic: String) =>
+  fun ref on_unsubscribe(conn: MQTTConnectionInterface ref, topic: String) =>
     """
     Called after successfully unsubscribing from a topic. Receives the
     connection and said topic.
     """
     None
 
-  fun ref on_ping(conn: MQTTConnection ref) =>
+  fun ref on_ping(conn: MQTTConnectionInterface ref) =>
     """
     Called after a ping request is replied by the server. Receives the
     connection.
     """
     None
 
-  fun ref on_disconnect(conn: MQTTConnection ref) =>
+  fun ref on_disconnect(conn: MQTTConnectionInterface ref) =>
     """
     Called after the connection to the broker is closed by the user. Receives
     the connection. When disconnected, packets and subscriptions should no
@@ -59,7 +63,7 @@ interface MQTTConnectionNotify
     None
 
   fun ref on_error(
-    conn: MQTTConnection ref,
+    conn: MQTTConnectionInterface ref,
     err: MQTTError,
     info: Array[U8] val = recover val Array[U8] end)
   =>

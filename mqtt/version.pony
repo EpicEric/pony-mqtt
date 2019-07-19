@@ -3,7 +3,7 @@ primitive MQTTv31
   Third version of the MQTT protocol.
   """
 
-primitive MQTTv311 is _MQTTVersionDowngradable
+primitive MQTTv311
   """
   Fourth version of the MQTT protocol. It is also the default version.
   """
@@ -26,9 +26,9 @@ type MQTTVersion is (MQTTv31 | MQTTv311)
   (currently, MQTTv31), it will stop reconnection.
   """
 
-trait val _MQTTVersionDowngradable
+interface val _MQTTVersionDowngradable
   """
-  Private trait to determine that an MQTT version can be downgraded to a
+  Private interface to determine that an MQTT version can be downgraded to a
   previous version of the protocol.
   """
 

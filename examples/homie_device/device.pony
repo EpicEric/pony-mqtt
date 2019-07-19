@@ -12,7 +12,7 @@ actor HomieDevice
   """
 
   let _env: Env
-  let _conn: MQTTConnection
+  let _conn: MQTTConnectionInterface
   let _id: String
   let _host: String
   let base_topic: String
@@ -22,7 +22,7 @@ actor HomieDevice
   var _timer_data: (Timer tag | None) = None
 
   new create(
-    env: Env, conn: MQTTConnection, id: String, host: String)
+    env: Env, conn: MQTTConnectionInterface, id: String, host: String)
   =>
     _env = env
     _conn = conn

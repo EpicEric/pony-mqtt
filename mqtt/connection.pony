@@ -1,10 +1,14 @@
 use "buffered"
 use "collections"
 use "net"
-use "net/ssl"
 use "time"
 
-actor MQTTConnection
+// actor MQTTConnection[A: (None | _SSL) = None, B: (None | _SSLContext[A]) = None, C: (None | _SSLConnection[A]) = None]
+actor MQTTConnection[
+  A: Any iso = None iso,
+  B: (None | _SSLContext[A] val) = None,
+  C: (None | _SSLConnection[A]) = None]
+  is MQTTConnectionInterface
   """
   An actor that handles the connection to the MQTT server in the background.
   When created, it establishes a TCP connection to the specified broker and
@@ -19,6 +23,17 @@ actor MQTTConnection
   of all current state and attempt to establish a new connection.
 
   During execution, it may also raise one of many errors to the notify class.
+
+  In order to use the [`net-ssl`](https://github.com/ponylang/net-ssl) package,
+  declare this actor with the following type parameters:
+
+  ```pony
+  use "net_ssl"
+
+  ...
+
+  conn = MQTTConnection[SSL iso, SSLContext, SSLConnection](...)
+  ```
   """
 
   let auth: AmbientAuth
@@ -50,7 +65,7 @@ actor MQTTConnection
   """
 
   let _clean_session: Bool
-  let _sslctx: (SSLContext | None)
+  let _sslctx: (B | None)
   let _sslhost: String
   let _will_packet: (MQTTPacket | None)
   let _client_id: String
@@ -109,7 +124,7 @@ actor MQTTConnection
     version': MQTTVersion = MQTTv311,
     retry_connection': U64 = 0,
     clean_session': Bool = true,
-    sslctx': (SSLContext | None) = None,
+    sslctx': (B | None) = None,
     sslhost': String = "",
     will_packet': (MQTTPacket | None) = None,
     client_id': String = "",
@@ -237,7 +252,7 @@ actor MQTTConnection
     if _is_connected and _retry_connection then
       _client.on_error(this, MQTTErrorConnectFailedRetry)
       let reconnect_timer = Timer(
-        _MQTTReconnectTimer(this), _reconnect_time, _reconnect_time)
+        _MQTTReconnectTimer[A, B, C](this), _reconnect_time, _reconnect_time)
       _reconnect_timer = reconnect_timer
       _timers(consume reconnect_timer)
     else
@@ -252,7 +267,7 @@ actor MQTTConnection
       if _retry_connection then
         _client.on_error(this, MQTTErrorSocketRetry)
         let reconnect_timer = Timer(
-          _MQTTReconnectTimer(this), 0, _reconnect_time)
+          _MQTTReconnectTimer[A, B, C](this), 0, _reconnect_time)
         _reconnect_timer = reconnect_timer
         _timers(consume reconnect_timer)
       else
@@ -267,10 +282,12 @@ actor MQTTConnection
   be _auth_failed(
     conn: TCPConnection)
   =>
-    try
-      _sslctx as SSLContext
-      _client.on_error(this, MQTTErrorTLSAuthentication)
-      _end_connection(true)
+    iftype B <: _SSLContext[A] then
+      try
+        _sslctx as B
+        _client.on_error(this, MQTTErrorTLSAuthentication)
+        _end_connection(true)
+      end
     end
 
   be _parse_packet(
@@ -294,11 +311,11 @@ actor MQTTConnection
           // Create a package resender timer and a keepalive timer
           _clean_timers()
           let resend_timer = Timer(
-            _MQTTPingTimer(this), _ping_time, _ping_time)
+            _MQTTPingTimer[A, B, C](this), _ping_time, _ping_time)
           _resend_timer = resend_timer
           _timers(consume resend_timer)
           let ping_timer = Timer(
-            _MQTTResendTimer(this), _resend_time, _resend_time)
+            _MQTTResendTimer[A, B, C](this), _resend_time, _resend_time)
           _ping_timer = ping_timer
           _timers(consume ping_timer)
           _client.on_connect(this, buffer.peek_u8(2)? == 0x01)
@@ -447,23 +464,34 @@ actor MQTTConnection
 
   be _new_connection() =>
     _end_connection()
-    if not(_sslctx is None) then
-      try
-        let ssl = (_sslctx as SSLContext).client()?
-        TCPConnection(
-          auth,
-          SSLConnection(
-            _MQTTConnectionHandler(this, auth),
-            consume ssl),
-          host,
-          port)
-        return
+    iftype B <: _SSLContext[A] val then
+      iftype C <: _SSLConnection[A] then
+        if _sslctx isnt None then
+          try
+            let ssl = (_sslctx as B).client(_sslhost)?
+            TCPConnection(
+              auth,
+              C(
+                _MQTTConnectionHandler[A, B, C](this, auth),
+                consume ssl),
+              host,
+              port)
+            return
+          else
+            _client.on_error(this, MQTTErrorTLSConfiguration)
+            return
+          end
+        else
+          TCPConnection(
+            auth, _MQTTConnectionHandler[A, B, C](this, auth), host, port)
+        end
       else
-        _client.on_error(this, MQTTErrorTLSConfiguration)
-        return
+        TCPConnection(
+          auth, _MQTTConnectionHandler[A, B, C](this, auth), host, port)
       end
     else
-      TCPConnection(auth, _MQTTConnectionHandler(this, auth), host, port)
+      TCPConnection(
+        auth, _MQTTConnectionHandler[A, B, C](this, auth), host, port)
     end
 
   fun ref _connect() =>

@@ -2,16 +2,20 @@ use "backpressure"
 use "buffered"
 use "net"
 
-class _MQTTConnectionHandler is TCPConnectionNotify
+class _MQTTConnectionHandler[
+  A: Any iso = None iso,
+  B: (None | _SSLContext[A] val) = None,
+  C: (None | _SSLConnection[A]) = None]
+  is TCPConnectionNotify
   """
   A TCPConnectionNotify class that handles and redirects all TCP events and
   messages to an MQTTConnection actor.
   """
-  let _connection: MQTTConnection
+  let _connection: MQTTConnection[A, B, C]
   let _auth: BackpressureAuth
   let _data_buffer: Reader = Reader
 
-  new iso create(connection: MQTTConnection, auth: BackpressureAuth) =>
+  new iso create(connection: MQTTConnection[A, B, C], auth: BackpressureAuth) =>
     _connection = connection
     _auth = auth
 

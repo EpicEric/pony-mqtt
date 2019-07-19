@@ -10,39 +10,43 @@ class iso MQTTSubNotify is MQTTConnectionNotify
   new iso create(env: Env) =>
     _env = env
 
-  fun ref on_connect(conn: MQTTConnection ref, session_present: Bool) =>
+  fun ref on_connect(
+    conn: MQTTConnectionInterface ref, session_present: Bool)
+  =>
     """
     Subscribe to $SYS/# topic upon connecting.
     """
     _env.out.print("> Connected.")
     conn.subscribe("$SYS/#")
 
-  fun ref on_message(conn: MQTTConnection ref, packet: MQTTPacket) =>
+  fun ref on_message(conn: MQTTConnectionInterface ref, packet: MQTTPacket) =>
     """
     Print received messages.
     """
     _env.out.print(packet.topic + " -- " + String.from_array(packet.message))
 
-  fun ref on_publish(conn: MQTTConnection ref, packet: MQTTPacket) =>
+  fun ref on_publish(conn: MQTTConnectionInterface ref, packet: MQTTPacket) =>
     None
 
-  fun ref on_subscribe(conn: MQTTConnection ref, topic: String, qos: U8) =>
+  fun ref on_subscribe(
+    conn: MQTTConnectionInterface ref, topic: String, qos: U8)
+  =>
     """
     Confirm subscription.
     """
     _env.out.print("> Subscribed to topic '" + topic + "'.")
 
-  fun ref on_unsubscribe(conn: MQTTConnection ref, topic: String) =>
+  fun ref on_unsubscribe(conn: MQTTConnectionInterface ref, topic: String) =>
     None
 
-  fun ref on_ping(conn: MQTTConnection ref) =>
+  fun ref on_ping(conn: MQTTConnectionInterface ref) =>
     None
   
-  fun ref on_disconnect(conn: MQTTConnection ref) =>
+  fun ref on_disconnect(conn: MQTTConnectionInterface ref) =>
     None
 
   fun ref on_error(
-    conn: MQTTConnection ref, err: MQTTError, info: Array[U8] val)
+    conn: MQTTConnectionInterface ref, err: MQTTError, info: Array[U8] val)
   =>
     """
     Print error.

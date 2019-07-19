@@ -17,18 +17,41 @@ Pony-MQTT is in alpha, which means breaking changes are expected. Please read [C
 ## Installation
 
 * Install [pony-stable](https://github.com/ponylang/pony-stable).
-* Update your `bundle.json`:
+* Add the following to your `bundle.json`:
 
 ```json
-{ 
-  "type": "github",
-  "repo": "epiceric/pony-mqtt"
-}
+[
+  ...,
+  { 
+    "type": "github",
+    "repo": "epiceric/pony-mqtt"
+  }
+]
 ```
 
 * `stable fetch` to fetch your dependencies.
 * `use "mqtt"` to include this package.
 * `stable env ponyc` to compile your application.
+
+### Installation with [`net-ssl`](https://github.com/ponylang/net-ssl)
+
+Follow the installations of the package, and add the following to your `bundle.json`:
+
+```json
+[
+  ...,
+  { 
+    "type": "github",
+    "repo": "epiceric/pony-mqtt"
+  },
+  { 
+    "type": "github",
+    "repo": "ponylang/net-ssl"
+  }
+]
+```
+
+See the [TLS example](examples/tls/main.pony) to configure your `MQTTConnection` appropriately.
 
 ## Usage
 
