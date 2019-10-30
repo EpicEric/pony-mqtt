@@ -394,7 +394,8 @@ actor MQTTConnection[
         if buffer.peek_u8(0)? != 0x90 then error end
         if buffer.size() != 5 then error end
         buffer.skip(2)?
-        let topic = _sub_topics.remove(buffer.u16_be()?)?._2._1
+        let topic_tuple = _sub_topics.remove(buffer.u16_be()?)?._2
+        let topic = topic_tuple._1
         if (buffer.peek_u8(0)? and 0x80) == 0x00 then
           _client.on_subscribe(this, topic, buffer.u8()? and 0x03)
         else
